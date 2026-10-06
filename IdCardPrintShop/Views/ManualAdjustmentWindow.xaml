@@ -1,0 +1,184 @@
+<Window x:Class="IdCardPrintShop.Views.ManualAdjustmentWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:views="clr-namespace:IdCardPrintShop.Views"
+        mc:Ignorable="d"
+        Title="التعديل اليدوي للأركان والمنظور (Manual Adjustment)"
+        Height="780" Width="1100"
+        WindowStartupLocation="CenterOwner"
+        Background="#12141a"
+        Foreground="#f0f2f5"
+        FlowDirection="RightToLeft"
+        FontFamily="Segoe UI, Tahoma, Arial">
+    
+    <Window.Resources>
+        <Style TargetType="Button">
+            <Setter Property="Background" Value="#222736" />
+            <Setter Property="Foreground" Value="#FFFFFF" />
+            <Setter Property="BorderBrush" Value="#3a4256" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Padding" Value="12,8" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="6"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#2f374c" />
+                    <Setter Property="BorderBrush" Value="#00E5FF" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <!-- Header Banner -->
+            <RowDefinition Height="Auto" />
+            <!-- Main Content (Interactive Canvas + Live Rectified Preview) -->
+            <RowDefinition Height="*" />
+            <!-- Footer Action Buttons -->
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Top Guidance Banner -->
+        <Border Grid.Row="0" Background="#1e2330" CornerRadius="8" Padding="14,10" Margin="0,0,0,12" BorderBrush="#2e384d" BorderThickness="1">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Orientation="Vertical">
+                    <TextBlock Text="🎯 التعديل اليدوي لحدود البطاقة والمنظور" FontSize="16" FontWeight="Bold" Foreground="#00E5FF" />
+                    <TextBlock Text="{Binding StatusMessage}" FontSize="12" Foreground="#9eabba" Margin="0,4,0,0" />
+                </StackPanel>
+
+                <!-- Corner Legend -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Border Background="#00E676" CornerRadius="4" Padding="6,2" Margin="4,0">
+                        <TextBlock Text="1: أعلى اليسار" Foreground="#000" FontSize="11" FontWeight="Bold" />
+                    </Border>
+                    <Border Background="#FFD600" CornerRadius="4" Padding="6,2" Margin="4,0">
+                        <TextBlock Text="2: أعلى اليمين" Foreground="#000" FontSize="11" FontWeight="Bold" />
+                    </Border>
+                    <Border Background="#FF1744" CornerRadius="4" Padding="6,2" Margin="4,0">
+                        <TextBlock Text="3: أسفل اليمين" Foreground="#FFF" FontSize="11" FontWeight="Bold" />
+                    </Border>
+                    <Border Background="#2979FF" CornerRadius="4" Padding="6,2" Margin="4,0">
+                        <TextBlock Text="4: أسفل اليسار" Foreground="#FFF" FontSize="11" FontWeight="Bold" />
+                    </Border>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Main Body -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <!-- Interactive Canvas (Source Image with 4 Draggable Handles) -->
+                <ColumnDefinition Width="2*" />
+                <!-- Sidebar Controls & Real-time Rectified Preview -->
+                <ColumnDefinition Width="1*" MinWidth="340" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Interactive Canvas -->
+            <Border Grid.Column="0" Background="#090a0f" CornerRadius="8" BorderBrush="#252b3b" BorderThickness="1" Margin="0,0,12,0">
+                <views:DraggableCornerCanvas x:Name="CornerCanvas" />
+            </Border>
+
+            <!-- Sidebar Controls -->
+            <Border Grid.Column="1" Background="#181b24" CornerRadius="8" BorderBrush="#252b3b" BorderThickness="1" Padding="14">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Orientation="Vertical">
+                        
+                        <!-- Real-time Rectified Card Preview -->
+                        <TextBlock Text="معاينة البطاقة بعد تصحيح المنظور:" FontWeight="Bold" FontSize="13" Foreground="#c5d0e0" Margin="0,0,0,8" />
+                        <Border Background="#0d0f14" CornerRadius="6" BorderBrush="#343d52" BorderThickness="1" Height="190" Margin="0,0,0,14" ClipToBounds="True">
+                            <Image Source="{Binding LiveRectifiedPreview}"
+                                   Stretch="Uniform"
+                                   RenderOptions.BitmapScalingMode="HighQuality" />
+                        </Border>
+
+                        <!-- Fast Rotation Tools -->
+                        <TextBlock Text="الاتجاه والتدوير السريع:" FontWeight="Bold" FontSize="13" Foreground="#c5d0e0" Margin="0,0,0,8" />
+                        <UniformGrid Columns="3" Margin="0,0,0,12">
+                            <Button Command="{Binding Rotate90CWCommand}" Margin="2" Content="🔄 90° يمين" ToolTip="تدوير 90 درجة باتجاه عقارب الساعة" />
+                            <Button Command="{Binding Rotate90CCWCommand}" Margin="2" Content="🔄 90° يسار" ToolTip="تدوير 90 درجة عكس عقارب الساعة" />
+                            <Button Command="{Binding Flip180Command}" Margin="2" Content="🔃 قلب 180°" ToolTip="قلب البطاقة رأساً على عقب" />
+                        </UniformGrid>
+
+                        <!-- Fine Rotation Slider -->
+                        <Grid Margin="0,4,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="تدوير دقيق (درجات):" FontSize="12" Foreground="#9eabba" />
+                            <TextBlock Grid.Column="1" Text="{Binding FineRotationDegrees, StringFormat='{}{0:F1}°'}" FontSize="12" FontWeight="Bold" Foreground="#00E5FF" />
+                        </Grid>
+                        <Slider Minimum="-15" Maximum="15" Value="{Binding FineRotationDegrees}" TickFrequency="1" IsSnapToTickEnabled="False" Margin="0,0,0,14" />
+
+                        <!-- Safety Margin Slider -->
+                        <Grid Margin="0,4,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="هامش أمان إضافي للحواف (%):" FontSize="12" Foreground="#9eabba" />
+                            <TextBlock Grid.Column="1" Text="{Binding SafetyMarginPercent, StringFormat='{}{0:F1}%'}" FontSize="12" FontWeight="Bold" Foreground="#00E5FF" />
+                        </Grid>
+                        <Slider Minimum="0" Maximum="6" Value="{Binding SafetyMarginPercent}" TickFrequency="0.5" IsSnapToTickEnabled="False" Margin="0,0,0,14" />
+
+                        <!-- Role Definition: Front vs Back -->
+                        <TextBlock Text="تحديد وجه البطاقة:" FontWeight="Bold" FontSize="13" Foreground="#c5d0e0" Margin="0,4,0,8" />
+                        <UniformGrid Columns="2" Margin="0,0,0,14">
+                            <Button Command="{Binding SetAsFrontCommand}" Content="الوجه (Front)" Margin="2" />
+                            <Button Command="{Binding SetAsBackCommand}" Content="الظهر (Back)" Margin="2" />
+                        </UniformGrid>
+
+                        <!-- Detection & Reset Tools -->
+                        <TextBlock Text="إعادة الضبط:" FontWeight="Bold" FontSize="13" Foreground="#c5d0e0" Margin="0,4,0,8" />
+                        <StackPanel Orientation="Vertical">
+                            <Button Command="{Binding AutoDetectAgainCommand}" Content="🎯 إعادة الاكتشاف التلقائي" Margin="0,2,0,4" />
+                            <Button Command="{Binding ResetCornersCommand}" Content="↩️ استعادة الأركان السابقة" Margin="0,2,0,4" />
+                        </StackPanel>
+
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+        </Grid>
+
+        <!-- Footer Buttons -->
+        <Border Grid.Row="2" Margin="0,14,0,0" Padding="0">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="💡 نصيحة: يمكنك سحب أي ركن من الأركان الأربعة بالماوس مباشرة فوق الصورة." Foreground="#738194" FontSize="12" />
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <Button Command="{Binding CancelCommand}" Content="إلغاء التعديل" Width="120" Margin="6,0" />
+                    <Button Command="{Binding ApplyCommand}" Content="✅ تطبيق وحفظ (Enter)" Width="170" Margin="6,0"
+                            Background="#00b0ff" BorderBrush="#0091ea" Foreground="#FFFFFF" FontWeight="Bold" />
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

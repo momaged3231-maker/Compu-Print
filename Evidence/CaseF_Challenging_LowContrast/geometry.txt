@@ -1,0 +1,13 @@
+Detection Case: SingleCard
+IsConfident: True
+Message: تم اكتشاف بطاقة واحدة بنجاح.
+Card #1 (بطاقة 1) [Role: Front]:
+  Corner 1 (Top-Left):     (359.0, 301.0)
+  Corner 2 (Top-Right):    (838.0, 299.0)
+  Corner 3 (Bottom-Right): (840.0, 598.0)
+  Corner 4 (Bottom-Left):  (361.0, 600.0)
+  Width (Top/Bottom avg):  479.0 px
+  Height (Left/Right avg): 299.0 px
+  Aspect Ratio:            1.602
+  Confidence:              85%
+  Rotation Quarter Turns:  0 (Total: 0°)

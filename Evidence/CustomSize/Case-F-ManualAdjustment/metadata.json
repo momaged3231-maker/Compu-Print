@@ -1,0 +1,16 @@
+{
+  "Action": "Manual Adjustment (Drag \u002B Rotate)",
+  "Item1_Original": {
+    "X": 3,
+    "Y": 3
+  },
+  "Item1_Adjusted": {
+    "X": 18,
+    "Y": 23
+  },
+  "Item2_Rotated": {
+    "Width": 50,
+    "Height": 60,
+    "Rotation": 90
+  }
+}

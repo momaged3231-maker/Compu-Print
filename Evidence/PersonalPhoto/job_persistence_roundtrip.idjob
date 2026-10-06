@@ -1,0 +1,69 @@
+{
+  "orderNumber": "#STUDIO-2026-001",
+  "customerName": "\u0623\u062D\u0645\u062F \u0645\u0635\u0637\u0641\u0649",
+  "notes": "\u0635\u0648\u0631 \u0634\u062E\u0635\u064A\u0629 4x6 \u062E\u0644\u0641\u064A\u0629 \u0628\u064A\u0636\u0627\u0621 \u0645\u0639 \u0639\u0644\u0627\u0645\u0627\u062A \u0642\u0635",
+  "createdAt": "2026-10-06T09:54:13.1704523+03:00",
+  "inputFiles": [],
+  "detectedCards": [],
+  "selectedTemplateId": "personal_photo_grid",
+  "copies": 8,
+  "outputPdfPath": "",
+  "jobType": "PersonalPhoto",
+  "personalPhotos": [
+    {
+      "id": "studio_item_1",
+      "sourceImagePath": "C:\\Users\\moham\\OneDrive\\\u0633\u0637\u062D \u0627\u0644\u0645\u0643\u062A\u0628\\P\\Evidence\\PersonalPhoto\\case1_street_original.png",
+      "displayName": "case1_street_original.png",
+      "status": 0,
+      "statusMessage": "\u062A\u0645 \u0627\u0644\u0627\u0633\u062A\u064A\u0631\u0627\u062F",
+      "profile": {
+        "id": "personal_40x60",
+        "name": "\u0635\u0648\u0631\u0629 \u0634\u062E\u0635\u064A\u0629 (40 \u00D7 60 mm)",
+        "description": "\u0627\u0644\u0645\u0642\u0627\u0633 \u0627\u0644\u0623\u0643\u062B\u0631 \u0637\u0644\u0628\u0627\u064B \u0641\u064A \u0645\u062D\u0644\u0627\u062A \u0627\u0644\u062A\u0635\u0648\u064A\u0631 \u0644\u0644\u0628\u0637\u0627\u0642\u0627\u062A \u0648\u0627\u0644\u0627\u0633\u062A\u0645\u0627\u0631\u0627\u062A",
+        "widthMm": 40,
+        "heightMm": 60,
+        "targetDpi": 300,
+        "headHeightPercent": 0.55,
+        "topMarginPercent": 0.12,
+        "recommendedCopies": 8,
+        "defaultPaperSize": "A4",
+        "AspectRatio": 0.6666666666666666
+      },
+      "parameters": {
+        "cropBox": {
+          "x": 100,
+          "y": 80,
+          "width": 400,
+          "height": 600
+        },
+        "faceBox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "headCenterX": 0,
+        "headCenterY": 0,
+        "headHeight": 0,
+        "backgroundType": 0,
+        "bgRed": 255,
+        "bgGreen": 255,
+        "bgBlue": 255,
+        "removeBackground": true,
+        "edgeFeatherRadius": 2,
+        "brightness": 0,
+        "contrast": 0,
+        "saturation": 0,
+        "temperature": 0,
+        "rotationQuarterTurns": 0,
+        "autoEnhance": true,
+        "isManualAdjusted": false
+      },
+      "copies": 8
+    }
+  ],
+  "documents": [],
+  "customSizeItems": [],
+  "customSizeParameters": null,
+  "exportTimestamp": null
+}

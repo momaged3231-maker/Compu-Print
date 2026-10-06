@@ -1,0 +1,23 @@
+Detection Case: TwoCards
+Cards Count: 2
+Reversed order handling: The system detects both regions independently.
+Card #1 (بطاقة أ (الوجه المقترح)) [Role: Front]:
+  Corner 1 (Top-Left):     (757.0, 349.0)
+  Corner 2 (Top-Right):    (1240.0, 347.0)
+  Corner 3 (Bottom-Right): (1245.0, 651.0)
+  Corner 4 (Bottom-Left):  (758.0, 655.0)
+  Width (Top/Bottom avg):  485.0 px
+  Height (Left/Right avg): 305.0 px
+  Aspect Ratio:            1.590
+  Confidence:              85%
+  Rotation Quarter Turns:  0 (Total: 0°)
+Card #2 (بطاقة ب (الظهر المقترح)) [Role: Back]:
+  Corner 1 (Top-Left):     (147.0, 350.0)
+  Corner 2 (Top-Right):    (629.0, 347.0)
+  Corner 3 (Bottom-Right): (635.0, 651.0)
+  Corner 4 (Bottom-Left):  (148.0, 655.0)
+  Width (Top/Bottom avg):  484.5 px
+  Height (Left/Right avg): 304.5 px
+  Aspect Ratio:            1.591
+  Confidence:              85%
+  Rotation Quarter Turns:  0 (Total: 0°)

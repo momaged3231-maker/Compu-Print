@@ -1,0 +1,1196 @@
+<Window x:Class="IdCardPrintShop.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:views="clr-namespace:IdCardPrintShop.Views"
+        xmlns:models="clr-namespace:IdCardPrintShop.Models"
+        mc:Ignorable="d"
+        Title="Smart Print Shop Pro | نظام معالجة وطباعة البطاقات والصور الشخصية"
+        Height="920" Width="1480"
+        MinHeight="750" MinWidth="1100"
+        WindowStartupLocation="CenterScreen"
+        Background="#0e1017"
+        Foreground="#f1f3f7"
+        FlowDirection="RightToLeft"
+        FontFamily="Segoe UI, Tahoma, Arial">
+
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+
+        <!-- Button Style -->
+        <Style x:Key="DarkButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="#1c212d" />
+            <Setter Property="Foreground" Value="#FFFFFF" />
+            <Setter Property="BorderBrush" Value="#323b4e" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Padding" Value="12,7" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="6"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#293245" />
+                    <Setter Property="BorderBrush" Value="#00E5FF" />
+                </Trigger>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Opacity" Value="0.45" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Primary Action Button Style -->
+        <Style x:Key="PrimaryButtonStyle" TargetType="Button" BasedOn="{StaticResource DarkButtonStyle}">
+            <Setter Property="Background" Value="#0091ea" />
+            <Setter Property="BorderBrush" Value="#00b0ff" />
+            <Setter Property="Foreground" Value="#FFFFFF" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#00b0ff" />
+                    <Setter Property="BorderBrush" Value="#80d8ff" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Presets Button Style -->
+        <Style x:Key="PresetButtonStyle" TargetType="Button" BasedOn="{StaticResource DarkButtonStyle}">
+            <Setter Property="Padding" Value="10,4" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Margin" Value="2,0" />
+            <Setter Property="MinWidth" Value="34" />
+        </Style>
+
+        <Style TargetType="TextBox">
+            <Setter Property="Background" Value="#171b24" />
+            <Setter Property="Foreground" Value="#FFFFFF" />
+            <Setter Property="BorderBrush" Value="#2f3747" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Padding" Value="8,5" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+
+        <Style TargetType="ComboBox">
+            <Setter Property="Background" Value="#171b24" />
+            <Setter Property="Foreground" Value="#111111" />
+            <Setter Property="BorderBrush" Value="#2f3747" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Padding" Value="8,6" />
+        </Style>
+
+        <Style TargetType="CheckBox">
+            <Setter Property="Foreground" Value="#d2d8e3" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FontSize" Value="12" />
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <!-- Top App Bar -->
+            <RowDefinition Height="Auto" />
+            <!-- Main Content Area -->
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- 1. Top Application Bar -->
+        <Border Grid.Row="0" Background="#141822" BorderBrush="#232a3b" BorderThickness="0,0,0,1" Padding="16,10">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <!-- Brand & Title -->
+                    <ColumnDefinition Width="Auto" />
+                    <!-- Mode Switcher Tabs -->
+                    <ColumnDefinition Width="Auto" />
+                    <!-- Order Info Inputs -->
+                    <ColumnDefinition Width="*" />
+                    <!-- Job Actions -->
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Brand -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,24,0">
+                    <Border Background="#00b0ff" CornerRadius="6" Width="36" Height="36" Margin="0,0,12,0">
+                        <TextBlock Text="🖨️" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <StackPanel Orientation="Vertical">
+                        <TextBlock Text="Smart Print Shop Pro" FontSize="16" FontWeight="Bold" Foreground="#00E5FF" />
+                        <TextBlock Text="محرك معالجة وطباعة البطاقات والصور الشخصية" FontSize="11" Foreground="#8592a6" />
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- Mode Switcher Tabs -->
+                <Border Grid.Column="1" Background="#0d1017" CornerRadius="8" BorderBrush="#273145" BorderThickness="1" Padding="3" Margin="0,0,20,0" VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal">
+                        <Button Command="{Binding SwitchToIdCardsCommand}" Padding="14,6" Margin="0,0,2,0">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource DarkButtonStyle}">
+                                    <Setter Property="Background" Value="Transparent" />
+                                    <Setter Property="BorderThickness" Value="0" />
+                                    <Setter Property="Foreground" Value="#8c9cb3" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsIdCardMode}" Value="True">
+                                            <Setter Property="Background" Value="#0091ea" />
+                                            <Setter Property="Foreground" Value="#ffffff" />
+                                            <Setter Property="FontWeight" Value="Bold" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="🪪" FontSize="14" Margin="0,0,6,0" VerticalAlignment="Center" />
+                                <TextBlock Text="بطاقات الهوية" FontSize="12" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+
+                        <Button Command="{Binding SwitchToPersonalPhotosCommand}" Padding="14,6">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource DarkButtonStyle}">
+                                    <Setter Property="Background" Value="Transparent" />
+                                    <Setter Property="BorderThickness" Value="0" />
+                                    <Setter Property="Foreground" Value="#8c9cb3" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsPersonalPhotoMode}" Value="True">
+                                            <Setter Property="Background" Value="#7c4dff" />
+                                            <Setter Property="Foreground" Value="#ffffff" />
+                                            <Setter Property="FontWeight" Value="Bold" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="👤" FontSize="14" Margin="0,0,6,0" VerticalAlignment="Center" />
+                                <TextBlock Text="استوديو الصور الشخصية" FontSize="12" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+
+                        <Button Command="{Binding SwitchToGenericDocumentsCommand}" Padding="14,6" Margin="2,0,0,0">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource DarkButtonStyle}">
+                                    <Setter Property="Background" Value="Transparent" />
+                                    <Setter Property="BorderThickness" Value="0" />
+                                    <Setter Property="Foreground" Value="#8c9cb3" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsGenericDocumentsMode}" Value="True">
+                                            <Setter Property="Background" Value="#00c853" />
+                                            <Setter Property="Foreground" Value="#ffffff" />
+                                            <Setter Property="FontWeight" Value="Bold" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="📄" FontSize="14" Margin="0,0,6,0" VerticalAlignment="Center" />
+                                <TextBlock Text="طباعة مستندات عامة" FontSize="12" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+
+                        <Button Command="{Binding SwitchToCustomSizeCommand}" Padding="14,6" Margin="2,0,0,0">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource DarkButtonStyle}">
+                                    <Setter Property="Background" Value="Transparent" />
+                                    <Setter Property="BorderThickness" Value="0" />
+                                    <Setter Property="Foreground" Value="#8c9cb3" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsCustomSizeMode}" Value="True">
+                                            <Setter Property="Background" Value="#ff6d00" />
+                                            <Setter Property="Foreground" Value="#ffffff" />
+                                            <Setter Property="FontWeight" Value="Bold" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="📐" FontSize="14" Margin="0,0,6,0" VerticalAlignment="Center" />
+                                <TextBlock Text="مقاسات مخصصة (Custom Size)" FontSize="12" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                </Border>
+
+                <!-- Order Details Inputs -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal" Margin="0,0,14,0">
+                        <TextBlock Text="الطلب:" Foreground="#9eabba" VerticalAlignment="Center" Margin="0,0,6,0" FontSize="12" />
+                        <TextBox Text="{Binding OrderNumber, UpdateSourceTrigger=PropertyChanged}" Width="110" FontSize="12" />
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,0,14,0">
+                        <TextBlock Text="العميل:" Foreground="#9eabba" VerticalAlignment="Center" Margin="0,0,6,0" FontSize="12" />
+                        <TextBox Text="{Binding CustomerName, UpdateSourceTrigger=PropertyChanged}" Width="140" FontSize="12" />
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="ملاحظات:" Foreground="#9eabba" VerticalAlignment="Center" Margin="0,0,6,0" FontSize="12" />
+                        <TextBox Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}" Width="140" FontSize="12" />
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- Job Persistence / Audit Buttons -->
+                <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Command="{Binding SaveJobCommand}" Content="💾 حفظ (.idjob)" Style="{StaticResource DarkButtonStyle}" Margin="4,0" ToolTip="حفظ إعدادات المعالجة والتوزيع لاستعادتها لاحقاً" />
+                    <Button Command="{Binding LoadJobCommand}" Content="📂 فتح مشروع" Style="{StaticResource DarkButtonStyle}" Margin="4,0" ToolTip="فتح ملف مشروع محفوظ مسبقاً" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- 2. Main Content Split View -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <!-- Left Workflow & Control Panel -->
+                <ColumnDefinition Width="440" MinWidth="380" MaxWidth="540" />
+                <!-- Splitter -->
+                <ColumnDefinition Width="2" />
+                <!-- Right Live Sheet Preview -->
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <!-- LEFT CONTROL PANEL -->
+            <Border Grid.Column="0" Background="#11141c" Padding="14">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Orientation="Vertical">
+
+                        <!-- ============================================== -->
+                        <!-- A. ID CARDS WORKFLOW CONTROLS (IsIdCardMode)   -->
+                        <!-- ============================================== -->
+                        <StackPanel Visibility="{Binding IsIdCardMode, Converter={StaticResource BoolToVis}}">
+
+                            <!-- STEP 1: IMPORT & DETECTION -->
+                            <Border Background="#171c26" CornerRadius="8" BorderBrush="#252d3d" BorderThickness="1" Padding="12" Margin="0,0,0,12">
+                                <StackPanel Orientation="Vertical">
+                                    <TextBlock Text="1. استيراد صور البطاقة (Input)" FontWeight="Bold" FontSize="14" Foreground="#00E5FF" Margin="0,0,0,8" />
+
+                                    <!-- Drag & Drop Zone -->
+                                    <Border x:Name="DropZone"
+                                            Background="#1c222e"
+                                            BorderBrush="#3a4559"
+                                            BorderThickness="2"
+                                            CornerRadius="6"
+                                            Padding="14"
+                                            AllowDrop="True"
+                                            DragEnter="OnDropZoneDragEnter"
+                                            DragLeave="OnDropZoneDragLeave"
+                                            Drop="OnDropZoneDrop"
+                                            Cursor="Hand">
+                                        <StackPanel Orientation="Vertical" HorizontalAlignment="Center">
+                                            <TextBlock Text="📥" FontSize="26" HorizontalAlignment="Center" Margin="0,0,0,4" />
+                                            <TextBlock Text="اسحب وأفلت صور البطاقة هنا" FontSize="13" FontWeight="SemiBold" Foreground="#FFFFFF" HorizontalAlignment="Center" />
+                                            <TextBlock Text="يدعم: صورة واحدة تحتوي الوجهين معاً أو صورتين منفصلتين" FontSize="11" Foreground="#8592a6" HorizontalAlignment="Center" Margin="0,4,0,8" />
+                                            <Button Command="{Binding ImportImagesCommand}" Content="استعراض الصور من الجهاز..." Style="{StaticResource DarkButtonStyle}" HorizontalAlignment="Center" />
+                                        </StackPanel>
+                                    </Border>
+
+                                    <!-- Detection Status Banner -->
+                                    <Border Margin="0,10,0,0" CornerRadius="6" Padding="10,8"
+                                            Visibility="{Binding DetectionNotice, Converter={StaticResource BoolToVis}}">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="Background" Value="#172e27" />
+                                                <Setter Property="BorderBrush" Value="#00e676" />
+                                                <Setter Property="BorderThickness" Value="1" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsNoticeWarning}" Value="True">
+                                                        <Setter Property="Background" Value="#332415" />
+                                                        <Setter Property="BorderBrush" Value="#ff9100" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+
+                                            <TextBlock Grid.Column="0" Text="{Binding DetectionNotice}" FontSize="12" Foreground="#FFFFFF" VerticalAlignment="Center" TextWrapping="Wrap" />
+
+                                            <Button Grid.Column="1"
+                                                    Content="تعديل يدوي ✏️"
+                                                    Command="{Binding OpenManualAdjustmentCommand}"
+                                                    Style="{StaticResource DarkButtonStyle}"
+                                                    Padding="8,4" FontSize="11" Margin="6,0,0,0"
+                                                    Visibility="{Binding IsNoticeWarning, Converter={StaticResource BoolToVis}}" />
+                                        </Grid>
+                                    </Border>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- STEP 2: DETECTED CARDS & CORRECTION -->
+                            <Border Background="#171c26" CornerRadius="8" BorderBrush="#252d3d" BorderThickness="1" Padding="12" Margin="0,0,0,12"
+                                    Visibility="{Binding HasCards, Converter={StaticResource BoolToVis}}">
+                                <StackPanel Orientation="Vertical">
+                                    <Grid Margin="0,0,0,8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <TextBlock Grid.Column="0" Text="2. البطاقات المكتشفة وتصحيح المنظور" FontWeight="Bold" FontSize="14" Foreground="#00E5FF" VerticalAlignment="Center" />
+
+                                        <Button Grid.Column="1" Command="{Binding SwapRolesCommand}"
+                                                Content="🔀 تبديل الوجه والظهر"
+                                                Style="{StaticResource DarkButtonStyle}"
+                                                Padding="8,4" FontSize="11" ToolTip="تبديل بطاقة الوجه لتصبح الظهر والعكس" />
+                                    </Grid>
+
+                                    <!-- Cards List -->
+                                    <ItemsControl ItemsSource="{Binding Cards}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border Background="#1f2533" CornerRadius="6" BorderBrush="#353e52" BorderThickness="1" Padding="10" Margin="0,0,0,8">
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="130" />
+                                                            <ColumnDefinition Width="*" />
+                                                        </Grid.ColumnDefinitions>
+
+                                                        <!-- Thumbnail -->
+                                                        <Border Grid.Column="0" Background="#0b0d12" CornerRadius="4" BorderBrush="#424c61" BorderThickness="1" Height="82" ClipToBounds="True">
+                                                            <Image Source="{Binding RectifiedImage}" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality" />
+                                                        </Border>
+
+                                                        <!-- Controls -->
+                                                        <StackPanel Grid.Column="1" Orientation="Vertical" Margin="10,0,0,0">
+                                                            <Grid Margin="0,0,0,6">
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="*" />
+                                                                    <ColumnDefinition Width="Auto" />
+                                                                </Grid.ColumnDefinitions>
+                                                                <TextBlock Grid.Column="0" Text="{Binding DisplayLabel}" FontWeight="Bold" FontSize="13" Foreground="#FFFFFF" />
+                                                                <Border Grid.Column="1" CornerRadius="4" Padding="6,2">
+                                                                    <Border.Style>
+                                                                        <Style TargetType="Border">
+                                                                            <Setter Property="Background" Value="#0091ea" />
+                                                                            <Style.Triggers>
+                                                                                <DataTrigger Binding="{Binding Role}" Value="Back">
+                                                                                    <Setter Property="Background" Value="#7c4dff" />
+                                                                                </DataTrigger>
+                                                                            </Style.Triggers>
+                                                                        </Style>
+                                                                    </Border.Style>
+                                                                    <TextBlock Text="{Binding Role, Converter={x:Null}}" Foreground="#FFFFFF" FontSize="10" FontWeight="Bold" />
+                                                                </Border>
+                                                            </Grid>
+
+                                                            <TextBlock Text="{Binding StatusMessage}" FontSize="11" Foreground="#8592a6" Margin="0,0,0,8" />
+
+                                                            <!-- Action Buttons -->
+                                                            <StackPanel Orientation="Horizontal">
+                                                                <Button Command="{Binding RotateCWCommand}" Content="🔄 90°"
+                                                                        Style="{StaticResource DarkButtonStyle}" Padding="8,4" FontSize="11" Margin="0,0,4,0" ToolTip="تدوير 90 درجة يميناً" />
+                                                                <Button Content="✏️ ضبط الأركان"
+                                                                        Click="OnCardAdjustClick"
+                                                                        Style="{StaticResource DarkButtonStyle}" Padding="8,4" FontSize="11" Margin="0,0,4,0" ToolTip="تعديل أركان البطاقة والمنظور يدوياً" />
+                                                            </StackPanel>
+                                                        </StackPanel>
+                                                    </Grid>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- STEP 3: PRINT TEMPLATE & COPIES (ID Cards) -->
+                            <Border Background="#171c26" CornerRadius="8" BorderBrush="#252d3d" BorderThickness="1" Padding="12" Margin="0,0,0,12">
+                                <StackPanel Orientation="Vertical">
+                                    <TextBlock Text="3. قالب التوزيع وعدد النسخ (Layout)" FontWeight="Bold" FontSize="14" Foreground="#00E5FF" Margin="0,0,0,10" />
+
+                                    <!-- Template Selector -->
+                                    <TextBlock Text="قالب الورقة والتوزيع:" FontSize="12" Foreground="#9eabba" Margin="0,0,0,4" />
+                                    <ComboBox ItemsSource="{Binding Templates}"
+                                              SelectedItem="{Binding SelectedTemplate}"
+                                              DisplayMemberPath="Name"
+                                              Margin="0,0,0,12" />
+
+                                    <!-- Copies Selection -->
+                                    <TextBlock Text="عدد النسخ المطلوبة (Copies):" FontSize="12" Foreground="#9eabba" Margin="0,0,0,4" />
+                                    <Grid Margin="0,0,0,8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="70" />
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <Button Grid.Column="0" Command="{Binding DecrementCopiesCommand}" Content="➖" Style="{StaticResource DarkButtonStyle}" Padding="10,5" />
+                                        <TextBox Grid.Column="1" Text="{Binding Copies, UpdateSourceTrigger=PropertyChanged}" FontSize="15" FontWeight="Bold" HorizontalContentAlignment="Center" Margin="4,0" />
+                                        <Button Grid.Column="2" Command="{Binding IncrementCopiesCommand}" Content="➕" Style="{StaticResource DarkButtonStyle}" Padding="10,5" />
+
+                                        <!-- Quick Presets -->
+                                        <StackPanel Grid.Column="3" Orientation="Horizontal" HorizontalAlignment="Right">
+                                            <Button Command="{Binding SetCopiesPresetCommand}" CommandParameter="1" Content="1" Style="{StaticResource PresetButtonStyle}" />
+                                            <Button Command="{Binding SetCopiesPresetCommand}" CommandParameter="2" Content="2" Style="{StaticResource PresetButtonStyle}" />
+                                            <Button Command="{Binding SetCopiesPresetCommand}" CommandParameter="4" Content="4" Style="{StaticResource PresetButtonStyle}" />
+                                            <Button Command="{Binding SetCopiesPresetCommand}" CommandParameter="6" Content="6" Style="{StaticResource PresetButtonStyle}" />
+                                            <Button Command="{Binding SetCopiesPresetCommand}" CommandParameter="8" Content="8" Style="{StaticResource PresetButtonStyle}" />
+                                            <Button Command="{Binding SetCopiesPresetCommand}" CommandParameter="10" Content="10" Style="{StaticResource PresetButtonStyle}" />
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <!-- Sheet Options -->
+                                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                        <CheckBox IsChecked="{Binding ShowCutMarks}" Content="علامات القص لمقص الورق" Margin="0,0,16,0" />
+                                        <CheckBox IsChecked="{Binding DrawBorderBox}" Content="إطار خفيف حول البطاقة" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+
+                        </StackPanel>
+
+                        <!-- ======================================================== -->
+                        <!-- B. PERSONAL PHOTO STUDIO CONTROLS (IsPersonalPhotoMode) -->
+                        <!-- ======================================================== -->
+                        <StackPanel Visibility="{Binding IsPersonalPhotoMode, Converter={StaticResource BoolToVis}}">
+
+                            <!-- STEP 1: IMPORT STUDIO PHOTOS -->
+                            <Border Background="#171c26" CornerRadius="8" BorderBrush="#252d3d" BorderThickness="1" Padding="12" Margin="0,0,0,12">
+                                <StackPanel Orientation="Vertical">
+                                    <TextBlock Text="1. استيراد الصور الشخصية (موبايل / كاميرا)" FontWeight="Bold" FontSize="14" Foreground="#b388ff" Margin="0,0,0,8" />
+
+                                    <!-- Studio Drop Zone -->
+                                    <Border Background="#1c222e"
+                                            BorderBrush="#453a59"
+                                            BorderThickness="2"
+                                            CornerRadius="6"
+                                            Padding="14"
+                                            AllowDrop="True"
+                                            DragEnter="OnDropZoneDragEnter"
+                                            DragLeave="OnDropZoneDragLeave"
+                                            Drop="OnDropZoneDrop"
+                                            Cursor="Hand">
+                                        <StackPanel Orientation="Vertical" HorizontalAlignment="Center">
+                                            <TextBlock Text="👤📸" FontSize="26" HorizontalAlignment="Center" Margin="0,0,0,4" />
+                                            <TextBlock Text="اسحب صور العميل هنا (بأي خلفية أو إضاءة)" FontSize="13" FontWeight="SemiBold" Foreground="#FFFFFF" HorizontalAlignment="Center" />
+                                            <TextBlock Text="تفريغ خلفية تلقائي + توسيط الوجه + تصحيح ألوان وإضاءة فوراً" FontSize="11" Foreground="#a69eb0" HorizontalAlignment="Center" Margin="0,4,0,8" />
+                                            <Button Command="{Binding ImportPersonalPhotosCommand}" Content="استعراض الصور الشخصية..." Style="{StaticResource DarkButtonStyle}" HorizontalAlignment="Center" />
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- STEP 2: STUDIO PROFILE & SETTINGS -->
+                            <Border Background="#171c26" CornerRadius="8" BorderBrush="#252d3d" BorderThickness="1" Padding="12" Margin="0,0,0,12">
+                                <StackPanel Orientation="Vertical">
+                                    <TextBlock Text="2. مقاس الصورة وإعدادات الاستوديو" FontWeight="Bold" FontSize="14" Foreground="#b388ff" Margin="0,0,0,10" />
+
+                                    <!-- Profile Selector -->
+                                    <TextBlock Text="نوع ومقاس الصورة الشخصية:" FontSize="12" Foreground="#9eabba" Margin="0,0,0,4" />
+                                    <ComboBox ItemsSource="{Binding PhotoProfiles}"
+                                              SelectedItem="{Binding SelectedPhotoProfile}"
+                                              DisplayMemberPath="Name"
+                                              Margin="0,0,0,12" />
+
+                                    <!-- Quick Background Selector -->
+                                    <TextBlock Text="لون الخلفية المطلوب:" FontSize="12" Foreground="#9eabba" Margin="0,0,0,4" />
+                                    <UniformGrid Columns="4" Margin="0,0,0,12">
+                                        <Button Command="{Binding SetPersonalPhotoBackgroundCommand}" CommandParameter="PureWhite"
+                                                Style="{StaticResource DarkButtonStyle}" Margin="2" Padding="4,6" ToolTip="خلفية بيضاء ناصعة">
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                <Border Width="12" Height="12" Background="#FFFFFF" CornerRadius="6" Margin="0,0,4,0" BorderBrush="#999" BorderThickness="1" />
+                                                <TextBlock Text="أبيض" FontSize="11" />
+                                            </StackPanel>
+                                        </Button>
+
+                                        <Button Command="{Binding SetPersonalPhotoBackgroundCommand}" CommandParameter="LightBlue"
+                                                Style="{StaticResource DarkButtonStyle}" Margin="2" Padding="4,6" ToolTip="خلفية زرقاء فاتحة (لجوازات السفر أو الاستمارات)">
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                <Border Width="12" Height="12" Background="#dbebf7" CornerRadius="6" Margin="0,0,4,0" BorderBrush="#64b5f6" BorderThickness="1" />
+                                                <TextBlock Text="أزرق" FontSize="11" />
+                                            </StackPanel>
+                                        </Button>
+
+                                        <Button Command="{Binding SetPersonalPhotoBackgroundCommand}" CommandParameter="LightGray"
+                                                Style="{StaticResource DarkButtonStyle}" Margin="2" Padding="4,6" ToolTip="خلفية رمادية حيادية">
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                <Border Width="12" Height="12" Background="#e2e4e8" CornerRadius="6" Margin="0,0,4,0" BorderBrush="#aaa" BorderThickness="1" />
+                                                <TextBlock Text="رمادي" FontSize="11" />
+                                            </StackPanel>
+                                        </Button>
+
+                                        <Button Command="{Binding SetPersonalPhotoBackgroundCommand}" CommandParameter="Original"
+                                                Style="{StaticResource DarkButtonStyle}" Margin="2" Padding="4,6" ToolTip="الإبقاء على الخلفية الأصلية بدون تفريغ">
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                <TextBlock Text="🖼️" FontSize="11" Margin="0,0,2,0" />
+                                                <TextBlock Text="أصلية" FontSize="11" />
+                                            </StackPanel>
+                                        </Button>
+                                    </UniformGrid>
+
+                                    <!-- Copies Selection -->
+                                    <TextBlock Text="عدد النسخ المطبوعة على الورقة (Copies):" FontSize="12" Foreground="#9eabba" Margin="0,0,0,4" />
+                                    <Grid Margin="0,0,0,8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="70" />
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <Button Grid.Column="0" Command="{Binding DecrementPersonalPhotoCopiesCommand}" Content="➖" Style="{StaticResource DarkButtonStyle}" Padding="10,5" />
+                                        <TextBox Grid.Column="1" Text="{Binding PersonalPhotoCopies, UpdateSourceTrigger=PropertyChanged}" FontSize="15" FontWeight="Bold" HorizontalContentAlignment="Center" Margin="4,0" />
+                                        <Button Grid.Column="2" Command="{Binding IncrementPersonalPhotoCopiesCommand}" Content="➕" Style="{StaticResource DarkButtonStyle}" Padding="10,5" />
+
+                                        <!-- Quick Presets -->
+                                        <StackPanel Grid.Column="3" Orientation="Horizontal" HorizontalAlignment="Right">
+                                            <Button Command="{Binding SetPersonalPhotoCopiesPresetCommand}" CommandParameter="4" Content="4" Style="{StaticResource PresetButtonStyle}" />
+                                            <Button Command="{Binding SetPersonalPhotoCopiesPresetCommand}" CommandParameter="8" Content="8" Style="{StaticResource PresetButtonStyle}" ToolTip="8 صور (نصف ورقة A4)" />
+                                            <Button Command="{Binding SetPersonalPhotoCopiesPresetCommand}" CommandParameter="12" Content="12" Style="{StaticResource PresetButtonStyle}" />
+                                            <Button Command="{Binding SetPersonalPhotoCopiesPresetCommand}" CommandParameter="16" Content="16" Style="{StaticResource PresetButtonStyle}" ToolTip="16 صورة (ورقة A4 كاملة)" />
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <!-- Sheet Options -->
+                                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                        <CheckBox IsChecked="{Binding ShowCutMarks}" Content="علامات القص لمقص الورق" Margin="0,0,16,0" />
+                                        <CheckBox IsChecked="{Binding DrawBorderBox}" Content="إطار خفيف حول الصورة" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- STEP 3: BATCH PERSONAL PHOTOS LIST -->
+                            <Border Background="#171c26" CornerRadius="8" BorderBrush="#252d3d" BorderThickness="1" Padding="12" Margin="0,0,0,12"
+                                    Visibility="{Binding HasPersonalPhotos, Converter={StaticResource BoolToVis}}">
+                                <StackPanel Orientation="Vertical">
+                                    <TextBlock Text="3. صور الدفعة الحالية (Batch Photos)" FontWeight="Bold" FontSize="14" Foreground="#b388ff" Margin="0,0,0,8" />
+
+                                    <ItemsControl ItemsSource="{Binding PersonalPhotos}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border CornerRadius="6" BorderThickness="1" Padding="10" Margin="0,0,0,8">
+                                                    <Border.Style>
+                                                        <Style TargetType="Border">
+                                                            <Setter Property="Background" Value="#1f2533" />
+                                                            <Setter Property="BorderBrush" Value="#353e52" />
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                                    <Setter Property="Background" Value="#25243b" />
+                                                                    <Setter Property="BorderBrush" Value="#b388ff" />
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Border.Style>
+
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="90" />
+                                                            <ColumnDefinition Width="*" />
+                                                        </Grid.ColumnDefinitions>
+
+                                                        <!-- Thumbnail with HighQuality Scaling -->
+                                                        <Border Grid.Column="0" Background="#0b0d12" CornerRadius="4" BorderBrush="#424c61" BorderThickness="1" Height="110" ClipToBounds="True">
+                                                            <Image Source="{Binding RenderedPreview}" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality" />
+                                                        </Border>
+
+                                                        <!-- Controls & Status -->
+                                                        <StackPanel Grid.Column="1" Orientation="Vertical" Margin="10,0,0,0">
+                                                            <TextBlock Text="{Binding DisplayName}" FontWeight="Bold" FontSize="13" Foreground="#FFFFFF" TextTrimming="CharacterEllipsis" Margin="0,0,0,4" />
+
+                                                            <!-- Status Tag -->
+                                                            <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                                                                <Border Background="#203a2e" BorderBrush="#00e676" BorderThickness="1" CornerRadius="4" Padding="6,2">
+                                                                    <TextBlock Text="{Binding StatusMessage}" FontSize="11" Foreground="#69f0ae" />
+                                                                </Border>
+                                                            </StackPanel>
+
+                                                            <!-- Action Buttons -->
+                                                            <WrapPanel Orientation="Horizontal">
+                                                                <Button Command="{Binding RotateCWCommand}" Content="🔄 90°"
+                                                                        Style="{StaticResource DarkButtonStyle}" Padding="6,4" FontSize="11" Margin="0,0,4,4" ToolTip="تدوير 90 درجة" />
+                                                                <Button Content="✏️ تعديل وضبط التوسيط"
+                                                                        Click="OnPersonalPhotoAdjustClick"
+                                                                        Style="{StaticResource DarkButtonStyle}" Padding="8,4" FontSize="11" Margin="0,0,4,4" ToolTip="تعديل إطار القص، الألوان، والخلفية يدوياً" />
+                                                                <Button Content="👁️ عرض على الورقة"
+                                                                        Command="{Binding DataContext.SelectPersonalPhotoCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                        CommandParameter="{Binding}"
+                                                                        Style="{StaticResource DarkButtonStyle}" Padding="8,4" FontSize="11" Margin="0,0,4,4" ToolTip="اختيار هذه الصورة لعرضها وتوزيعها على ورقة الطباعة" />
+                                                            </WrapPanel>
+                                                        </StackPanel>
+                                                    </Grid>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
+
+                        </StackPanel>
+
+                        <!-- ======================================================== -->
+                        <!-- C. GENERIC DOCUMENT PRINTING (IsGenericDocumentsMode)   -->
+                        <!-- ======================================================== -->
+                        <StackPanel Visibility="{Binding IsGenericDocumentsMode, Converter={StaticResource BoolToVis}}">
+
+                            <!-- STEP 1: IMPORT & QUEUE -->
+                            <Border Background="#171c26" CornerRadius="8" BorderBrush="#252d3d" BorderThickness="1" Padding="12" Margin="0,0,0,12">
+                                <StackPanel Orientation="Vertical">
+                                    <TextBlock Text="1. استيراد المستندات (PDF / DOCX / JPG / PNG)" FontWeight="Bold" FontSize="14" Foreground="#00e676" Margin="0,0,0,8" />
+
+                                    <!-- Drop Zone -->
+                                    <Border Background="#1c222e"
+                                            BorderBrush="#2e543e"
+                                            BorderThickness="2"
+                                            CornerRadius="6"
+                                            Padding="14"
+                                            AllowDrop="True"
+                                            DragEnter="OnDropZoneDragEnter"
+                                            DragLeave="OnDropZoneDragLeave"
+                                            Drop="OnDropZoneDrop"
+                                            Cursor="Hand">
+                                        <StackPanel Orientation="Vertical" HorizontalAlignment="Center">
+                                            <TextBlock Text="📂🖨️" FontSize="26" HorizontalAlignment="Center" Margin="0,0,0,4" />
+                                            <TextBlock Text="اسحب وأفلت الملفات هنا (يدعم حتى 50+ ملف مختلط)" FontSize="13" FontWeight="SemiBold" Foreground="#FFFFFF" HorizontalAlignment="Center" />
+                                            <TextBlock Text="PDF • Word DOCX • JPG • PNG (فردي أو متعدد)" FontSize="11" Foreground="#8592a6" HorizontalAlignment="Center" Margin="0,4,0,8" />
+                                            <Button Command="{Binding ImportDocumentsCommand}" Content="استعراض وإضافة ملفات..." Style="{StaticResource DarkButtonStyle}" HorizontalAlignment="Center" />
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- STEP 2: BATCH ACTIONS BAR -->
+                            <Border Background="#171c26" CornerRadius="8" BorderBrush="#252d3d" BorderThickness="1" Padding="12" Margin="0,0,0,12"
+                                    Visibility="{Binding HasDocuments, Converter={StaticResource BoolToVis}}">
+                                <StackPanel Orientation="Vertical">
+                                    <TextBlock Text="2. تعديل دفعة واحدة (Batch Controls)" FontWeight="Bold" FontSize="14" Foreground="#00e676" Margin="0,0,0,8" />
+
+                                    <!-- Selection Toggles -->
+                                    <Grid Margin="0,0,0,8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0" Orientation="Horizontal">
+                                            <Button Command="{Binding SelectAllDocumentsCommand}" Content="تحديد الكل" Style="{StaticResource DarkButtonStyle}" Padding="8,3" FontSize="11" Margin="0,0,4,0" />
+                                            <Button Command="{Binding DeselectAllDocumentsCommand}" Content="إلغاء التحديد" Style="{StaticResource DarkButtonStyle}" Padding="8,3" FontSize="11" Margin="0,0,4,0" />
+                                            <Button Command="{Binding ClearDocumentsCommand}" Content="🗑️ مسح الكل" Style="{StaticResource DarkButtonStyle}" Padding="8,3" FontSize="11" />
+                                        </StackPanel>
+                                        <Button Grid.Column="1" Command="{Binding DuplicateSettingsCommand}" CommandParameter="{Binding SelectedDocument}"
+                                                Content="📋 نسخ الإعدادات للباقي" Style="{StaticResource DarkButtonStyle}" Padding="8,3" FontSize="11"
+                                                ToolTip="تطبيق إعدادات العنصر الحالي على جميع العناصر الأخرى" />
+                                    </Grid>
+
+                                    <!-- Quick Batch Settings Toolbar -->
+                                    <UniformGrid Columns="2" Margin="0,0,0,4">
+                                        <!-- Paper Batch -->
+                                        <StackPanel Orientation="Horizontal" Margin="0,2">
+                                            <TextBlock Text="الورق:" FontSize="11" Foreground="#9eabba" VerticalAlignment="Center" Margin="0,0,6,0" />
+                                            <Button Command="{Binding BatchApplyPaperSizeCommand}" CommandParameter="A4" Content="A4" Style="{StaticResource PresetButtonStyle}" />
+                                            <Button Command="{Binding BatchApplyPaperSizeCommand}" CommandParameter="A5" Content="A5" Style="{StaticResource PresetButtonStyle}" />
+                                            <Button Command="{Binding BatchApplyPaperSizeCommand}" CommandParameter="A3" Content="A3" Style="{StaticResource PresetButtonStyle}" />
+                                        </StackPanel>
+
+                                        <!-- Mode Batch -->
+                                        <StackPanel Orientation="Horizontal" Margin="0,2" HorizontalAlignment="Right">
+                                            <TextBlock Text="الألوان:" FontSize="11" Foreground="#9eabba" VerticalAlignment="Center" Margin="0,0,6,0" />
+                                            <Button Command="{Binding BatchApplyPrintModeCommand}" CommandParameter="bw" Content="B&amp;W" Style="{StaticResource PresetButtonStyle}" ToolTip="أبيض وأسود" />
+                                            <Button Command="{Binding BatchApplyPrintModeCommand}" CommandParameter="color" Content="Color" Style="{StaticResource PresetButtonStyle}" ToolTip="ألوان" />
+                                        </StackPanel>
+                                    </UniformGrid>
+
+                                    <UniformGrid Columns="2">
+                                        <!-- Copies Batch -->
+                                        <StackPanel Orientation="Horizontal" Margin="0,2">
+                                            <TextBlock Text="نسخ:" FontSize="11" Foreground="#9eabba" VerticalAlignment="Center" Margin="0,0,6,0" />
+                                            <Button Command="{Binding BatchApplyCopiesCommand}" CommandParameter="1" Content="1" Style="{StaticResource PresetButtonStyle}" />
+                                            <Button Command="{Binding BatchApplyCopiesCommand}" CommandParameter="2" Content="2" Style="{StaticResource PresetButtonStyle}" />
+                                            <Button Command="{Binding BatchApplyCopiesCommand}" CommandParameter="4" Content="4" Style="{StaticResource PresetButtonStyle}" />
+                                        </StackPanel>
+
+                                        <!-- Orientation Batch -->
+                                        <StackPanel Orientation="Horizontal" Margin="0,2" HorizontalAlignment="Right">
+                                            <TextBlock Text="الاتجاه:" FontSize="11" Foreground="#9eabba" VerticalAlignment="Center" Margin="0,0,6,0" />
+                                            <Button Command="{Binding BatchApplyOrientationCommand}" CommandParameter="Auto" Content="تلقائي" Style="{StaticResource PresetButtonStyle}" />
+                                            <Button Command="{Binding BatchApplyOrientationCommand}" CommandParameter="Portrait" Content="رأسي" Style="{StaticResource PresetButtonStyle}" />
+                                            <Button Command="{Binding BatchApplyOrientationCommand}" CommandParameter="Landscape" Content="أفقي" Style="{StaticResource PresetButtonStyle}" />
+                                        </StackPanel>
+                                    </UniformGrid>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- STEP 3: DOCUMENT QUEUE LIST -->
+                            <Border Background="#171c26" CornerRadius="8" BorderBrush="#252d3d" BorderThickness="1" Padding="12" Margin="0,0,0,12"
+                                    Visibility="{Binding HasDocuments, Converter={StaticResource BoolToVis}}">
+                                <StackPanel Orientation="Vertical">
+                                    <Grid Margin="0,0,0,8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="3. قائمة المستندات والترتيب (Queue)" FontWeight="Bold" FontSize="14" Foreground="#00e676" VerticalAlignment="Center" />
+                                        <TextBlock Grid.Column="1" Text="{Binding Documents.Count, StringFormat='{}عدد الملفات: {0}'}" FontSize="12" Foreground="#8592a6" VerticalAlignment="Center" />
+                                    </Grid>
+
+                                    <!-- Document Queue Items -->
+                                    <ItemsControl ItemsSource="{Binding Documents}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border CornerRadius="6" BorderThickness="1" Padding="10" Margin="0,0,0,8">
+                                                    <Border.Style>
+                                                        <Style TargetType="Border">
+                                                            <Setter Property="Background" Value="#1f2533" />
+                                                            <Setter Property="BorderBrush" Value="#353e52" />
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                                    <Setter Property="Background" Value="#1d2e24" />
+                                                                    <Setter Property="BorderBrush" Value="#00e676" />
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Border.Style>
+
+                                                    <StackPanel Orientation="Vertical">
+                                                        <!-- Header: Checkbox + Name + Status + Quick Reorder -->
+                                                        <Grid Margin="0,0,0,6">
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="Auto" />
+                                                                <ColumnDefinition Width="*" />
+                                                                <ColumnDefinition Width="Auto" />
+                                                            </Grid.ColumnDefinitions>
+
+                                                            <CheckBox Grid.Column="0" IsChecked="{Binding IsSelected}" Margin="0,0,8,0" VerticalAlignment="Center" />
+
+                                                            <StackPanel Grid.Column="1" Orientation="Vertical" VerticalAlignment="Center">
+                                                                <TextBlock Text="{Binding FileName}" FontWeight="Bold" FontSize="13" Foreground="#FFFFFF" TextTrimming="CharacterEllipsis" />
+                                                                <TextBlock Text="{Binding StatusMessage}" FontSize="11" Foreground="#8592a6" />
+                                                            </StackPanel>
+
+                                                            <!-- Reorder & Action buttons -->
+                                                            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                                                                <Button Command="{Binding DataContext.MoveDocumentUpCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                        CommandParameter="{Binding}" Content="⬆️" Style="{StaticResource PresetButtonStyle}" ToolTip="تحريك للأعلى" />
+                                                                <Button Command="{Binding DataContext.MoveDocumentDownCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                        CommandParameter="{Binding}" Content="⬇️" Style="{StaticResource PresetButtonStyle}" ToolTip="تحريك للأسفل" />
+                                                                <Button Command="{Binding DataContext.DuplicateDocumentCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                        CommandParameter="{Binding}" Content="📋" Style="{StaticResource PresetButtonStyle}" ToolTip="تكرار العنصر" />
+                                                                <Button Command="{Binding DataContext.RemoveDocumentCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                        CommandParameter="{Binding}" Content="❌" Style="{StaticResource PresetButtonStyle}" ToolTip="حذف الملف من القائمة" />
+                                                            </StackPanel>
+                                                        </Grid>
+
+                                                        <!-- Quick Per-Item Controls (No popup needed!) -->
+                                                        <Grid Margin="0,4,0,0">
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="Auto" />
+                                                                <ColumnDefinition Width="*" />
+                                                                <ColumnDefinition Width="Auto" />
+                                                            </Grid.ColumnDefinitions>
+
+                                                            <!-- Paper & Mode Selector -->
+                                                            <StackPanel Grid.Column="0" Orientation="Horizontal">
+                                                                <!-- Paper Size -->
+                                                                <ComboBox SelectedValue="{Binding PaperSizeName, UpdateSourceTrigger=PropertyChanged}" SelectedValuePath="Content" Width="68" Margin="0,0,4,0">
+                                                                    <ComboBoxItem Content="A4" />
+                                                                    <ComboBoxItem Content="A5" />
+                                                                    <ComboBoxItem Content="A3" />
+                                                                </ComboBox>
+
+                                                                <!-- B&W / Color -->
+                                                                <Button Command="{Binding SetPrintModeCommand}" CommandParameter="bw" Content="B&amp;W" Margin="0,0,2,0">
+                                                                    <Button.Style>
+                                                                        <Style TargetType="Button" BasedOn="{StaticResource PresetButtonStyle}">
+                                                                            <Style.Triggers>
+                                                                                <DataTrigger Binding="{Binding IsBw}" Value="True">
+                                                                                    <Setter Property="Background" Value="#37474f" />
+                                                                                    <Setter Property="BorderBrush" Value="#00E5FF" />
+                                                                                    <Setter Property="FontWeight" Value="Bold" />
+                                                                                </DataTrigger>
+                                                                            </Style.Triggers>
+                                                                        </Style>
+                                                                    </Button.Style>
+                                                                </Button>
+                                                                <Button Command="{Binding SetPrintModeCommand}" CommandParameter="color" Content="Color" Margin="0,0,4,0">
+                                                                    <Button.Style>
+                                                                        <Style TargetType="Button" BasedOn="{StaticResource PresetButtonStyle}">
+                                                                            <Style.Triggers>
+                                                                                <DataTrigger Binding="{Binding IsColor}" Value="True">
+                                                                                    <Setter Property="Background" Value="#e91e63" />
+                                                                                    <Setter Property="BorderBrush" Value="#ff4081" />
+                                                                                    <Setter Property="FontWeight" Value="Bold" />
+                                                                                </DataTrigger>
+                                                                            </Style.Triggers>
+                                                                        </Style>
+                                                                    </Button.Style>
+                                                                </Button>
+                                                            </StackPanel>
+
+                                                            <!-- Page Range Input (for multi-page PDF) -->
+                                                            <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="6,0">
+                                                                <TextBlock Text="الصفحات:" FontSize="11" Foreground="#9eabba" VerticalAlignment="Center" Margin="0,0,4,0" />
+                                                                <TextBox Text="{Binding PageRange, UpdateSourceTrigger=PropertyChanged}" Width="75" FontSize="11" ToolTip="مثال: All أو 1-3, 7, 10-12" />
+                                                            </StackPanel>
+
+                                                            <!-- Copies Counter -->
+                                                            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                                                                <Button Command="{Binding DecrementCopiesCommand}" Content="➖" Style="{StaticResource PresetButtonStyle}" />
+                                                                <TextBox Text="{Binding Copies, UpdateSourceTrigger=PropertyChanged}" Width="36" FontSize="12" FontWeight="Bold" HorizontalContentAlignment="Center" Margin="2,0" />
+                                                                <Button Command="{Binding IncrementCopiesCommand}" Content="➕" Style="{StaticResource PresetButtonStyle}" />
+                                                            </StackPanel>
+                                                        </Grid>
+
+                                                        <!-- Output badge -->
+                                                        <Border Background="#141822" CornerRadius="4" Padding="6,3" Margin="0,6,0,0">
+                                                            <TextBlock Text="{Binding OutputPagesBadge}" FontSize="11" Foreground="#00e676" FontWeight="SemiBold" HorizontalAlignment="Center" />
+                                                        </Border>
+                                                    </StackPanel>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- STEP 4: ORDER PREPARATION SUMMARY (Section 17) -->
+                            <Border Background="#171c26" CornerRadius="8" BorderBrush="#00e676" BorderThickness="1" Padding="12" Margin="0,0,0,12"
+                                    Visibility="{Binding HasDocuments, Converter={StaticResource BoolToVis}}">
+                                <StackPanel Orientation="Vertical">
+                                    <TextBlock Text="📊 ملخص تجهيز أمر الطباعة (Order Summary)" FontWeight="Bold" FontSize="14" Foreground="#00e676" Margin="0,0,0,8" />
+
+                                    <Grid Margin="0,0,0,6">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0">
+                                            <TextBlock Text="{Binding OrderSummary.TotalFiles, StringFormat='{}إجمالي الملفات: {0}'}" FontSize="12" Foreground="#FFFFFF" Margin="0,2" />
+                                            <TextBlock Text="{Binding OrderSummary.TotalInputPages, StringFormat='{}صفحات الأصل: {0}'}" FontSize="12" Foreground="#8592a6" Margin="0,2" />
+                                            <TextBlock Text="{Binding OrderSummary.TotalCopies, StringFormat='{}إجمالي النسخ: {0}'}" FontSize="12" Foreground="#8592a6" Margin="0,2" />
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="1">
+                                            <TextBlock Text="{Binding OrderSummary.A4_BwCount, StringFormat='{}A4 أبيض وأسود: {0}'}" FontSize="12" Foreground="#d2d8e3" Margin="0,2" />
+                                            <TextBlock Text="{Binding OrderSummary.A4_ColorCount, StringFormat='{}A4 ألوان: {0}'}" FontSize="12" Foreground="#ff80ab" Margin="0,2" />
+                                            <TextBlock Text="{Binding OrderSummary.A3_ColorCount, StringFormat='{}A3 ألوان: {0}'}" FontSize="12" Foreground="#ffd54f" Margin="0,2" />
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <Border Background="#0d1f14" CornerRadius="4" Padding="8,6" Margin="0,4,0,0">
+                                        <TextBlock Text="{Binding OrderSummary.TotalOutputPages, StringFormat='{}الصفحات الناتجة في PDF النهائي: {0} صفحة'}" FontWeight="Bold" FontSize="13" Foreground="#00e676" HorizontalAlignment="Center" />
+                                    </Border>
+                                </StackPanel>
+                            </Border>
+
+                        </StackPanel>
+
+                        <!-- ============================================== -->
+                        <!-- D. CUSTOM SIZE WORKFLOW CONTROLS (IsCustomSizeMode) -->
+                        <!-- ============================================== -->
+                        <StackPanel Visibility="{Binding IsCustomSizeMode, Converter={StaticResource BoolToVis}}">
+
+                            <!-- STEP 1: ADD ITEMS & PRESETS -->
+                            <Border Background="#171c26" CornerRadius="8" BorderBrush="#252d3d" BorderThickness="1" Padding="12" Margin="0,0,0,12">
+                                <StackPanel Orientation="Vertical">
+                                    <TextBlock Text="1. إضافة العناصر والمقاسات (Input)" FontWeight="Bold" FontSize="14" Foreground="#ff6d00" Margin="0,0,0,8" />
+
+                                    <Grid Margin="0,0,0,8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <Button Grid.Column="0" Command="{Binding AddCustomImageCommand}" Style="{StaticResource PrimaryButtonStyle}" Content="🖼️ إضافة صورة" Margin="0,0,4,0" Height="34" />
+                                        <Button Grid.Column="1" Command="{Binding AddCustomItemCommand}" Style="{StaticResource DarkButtonStyle}" Content="➕ إضافة عنصر" Margin="2,0,4,0" Height="34" />
+                                        <Button Grid.Column="2" Command="{Binding ClearCustomItemsCommand}" Style="{StaticResource DarkButtonStyle}" Content="🗑️ مسح" Height="34" />
+                                    </Grid>
+
+                                    <!-- Quick Presets -->
+                                    <TextBlock Text="مقاسات جاهزة سريعة (Presets):" FontSize="11" Foreground="#8c9cb3" Margin="0,4,0,4" />
+                                    <WrapPanel Margin="0,0,0,4">
+                                        <Button Content="30×40 mm" Style="{StaticResource PresetButtonStyle}" Command="{Binding AddCustomImageCommand}" Click="OnPreset30x40Click" Margin="2" />
+                                        <Button Content="40×50 mm" Style="{StaticResource PresetButtonStyle}" Click="OnPreset40x50Click" Margin="2" />
+                                        <Button Content="50×60 mm" Style="{StaticResource PresetButtonStyle}" Click="OnPreset50x60Click" Margin="2" />
+                                        <Button Content="60×90 mm" Style="{StaticResource PresetButtonStyle}" Click="OnPreset60x90Click" Margin="2" />
+                                        <Button Content="80×100 mm" Style="{StaticResource PresetButtonStyle}" Click="OnPreset80x100Click" Margin="2" />
+                                    </WrapPanel>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- STEP 2: ITEMS QUEUE -->
+                            <Border Background="#171c26" CornerRadius="8" BorderBrush="#252d3d" BorderThickness="1" Padding="12" Margin="0,0,0,12">
+                                <StackPanel Orientation="Vertical">
+                                    <Grid Margin="0,0,0,8">
+                                        <TextBlock Text="2. قائمة العناصر والنسخ (Items Queue)" FontWeight="Bold" FontSize="14" Foreground="#ff6d00" VerticalAlignment="Center" />
+                                        <TextBlock Text="{Binding CustomTotalCopiesCount, StringFormat='{}إجمالي النسخ: {0}'}" FontSize="12" Foreground="#00E5FF" HorizontalAlignment="Left" VerticalAlignment="Center" />
+                                    </Grid>
+
+                                    <ItemsControl ItemsSource="{Binding CustomItems}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border Background="#121620" CornerRadius="6" BorderBrush="#252f42" BorderThickness="1" Padding="8" Margin="0,0,0,6">
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="Auto" />
+                                                            <ColumnDefinition Width="*" />
+                                                            <ColumnDefinition Width="Auto" />
+                                                        </Grid.ColumnDefinitions>
+
+                                                        <!-- Thumbnail / Icon -->
+                                                        <Border Grid.Column="0" Width="44" Height="44" Background="#1c2333" CornerRadius="4" Margin="0,0,8,0">
+                                                            <Grid>
+                                                                <Image Source="{Binding Thumbnail}" Stretch="Uniform" />
+                                                                <TextBlock Text="📐" FontSize="18" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                                           Visibility="{Binding Thumbnail, Converter={StaticResource BoolToVis}, ConverterParameter=invert}" />
+                                                            </Grid>
+                                                        </Border>
+
+                                                        <!-- Info & Dimensions -->
+                                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                            <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" FontWeight="SemiBold" FontSize="12" Margin="0,0,0,4" />
+                                                            <StackPanel Orientation="Horizontal">
+                                                                <TextBlock Text="العرض:" FontSize="11" Foreground="#8c9cb3" VerticalAlignment="Center" Margin="0,0,2,0" />
+                                                                <TextBox Text="{Binding WidthMm, UpdateSourceTrigger=PropertyChanged}" Width="45" FontSize="11" Margin="0,0,6,0" />
+                                                                <TextBlock Text="الارتفاع:" FontSize="11" Foreground="#8c9cb3" VerticalAlignment="Center" Margin="0,0,2,0" />
+                                                                <TextBox Text="{Binding HeightMm, UpdateSourceTrigger=PropertyChanged}" Width="45" FontSize="11" Margin="0,0,6,0" />
+                                                                <CheckBox IsChecked="{Binding RotationAllowed}" Content="تدوير" FontSize="10" VerticalAlignment="Center" />
+                                                            </StackPanel>
+                                                            <TextBlock Text="{Binding Status}" FontSize="10" Foreground="Crimson"
+                                                                       Visibility="{Binding IsMissingSource, Converter={StaticResource BoolToVis}}" Margin="0,2,0,0" />
+                                                        </StackPanel>
+
+                                                        <!-- Copies & Delete -->
+                                                        <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="6,0,0,0">
+                                                            <Button Command="{Binding DecrementCopiesCommand}" Content="-" Style="{StaticResource DarkButtonStyle}" Padding="6,2" MinWidth="24" Height="26" />
+                                                            <TextBlock Text="{Binding Copies}" FontWeight="Bold" FontSize="12" Foreground="#FFFFFF" VerticalAlignment="Center" Margin="6,0" MinWidth="18" TextAlignment="Center" />
+                                                            <Button Command="{Binding IncrementCopiesCommand}" Content="+" Style="{StaticResource DarkButtonStyle}" Padding="6,2" MinWidth="24" Height="26" />
+                                                            <Button Command="{Binding DeleteCommand}" Content="🗑️" Style="{StaticResource DarkButtonStyle}" Padding="6,2" Height="26" Margin="4,0,0,0" ToolTip="حذف العنصر" />
+                                                        </StackPanel>
+                                                    </Grid>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- STEP 3: PAPER & LAYOUT SETTINGS -->
+                            <Border Background="#171c26" CornerRadius="8" BorderBrush="#252d3d" BorderThickness="1" Padding="12" Margin="0,0,0,12">
+                                <StackPanel Orientation="Vertical">
+                                    <TextBlock Text="3. إعدادات الورق والمسافات (Paper &amp; Margins)" FontWeight="Bold" FontSize="14" Foreground="#ff6d00" Margin="0,0,0,8" />
+
+                                    <Grid Margin="0,0,0,6">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0" Margin="0,0,4,0">
+                                            <TextBlock Text="مقاس الورق:" FontSize="11" Foreground="#8c9cb3" Margin="0,0,0,2" />
+                                            <ComboBox ItemsSource="{Binding CustomPaperSizes}" SelectedItem="{Binding CustomPaperSize}" DisplayMemberPath="Name" />
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="1" Margin="4,0,0,0">
+                                            <TextBlock Text="الاتجاه (Orientation):" FontSize="11" Foreground="#8c9cb3" Margin="0,0,0,2" />
+                                            <ComboBox SelectedValue="{Binding CustomOrientationMode}" SelectedValuePath="Tag">
+                                                <ComboBoxItem Content="تلقائي (Auto)" Tag="{x:Static models:CustomLayoutOrientationMode.Auto}" IsSelected="True" />
+                                                <ComboBoxItem Content="طولي (Portrait)" Tag="{x:Static models:CustomLayoutOrientationMode.Portrait}" />
+                                                <ComboBoxItem Content="عرضي (Landscape)" Tag="{x:Static models:CustomLayoutOrientationMode.Landscape}" />
+                                            </ComboBox>
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <Grid Margin="0,0,0,6">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0" Margin="0,0,4,0">
+                                            <TextBlock Text="هامش الأمان (Margin):" FontSize="11" Foreground="#8c9cb3" Margin="0,0,0,2" />
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBox Text="{Binding CustomSafetyMarginMm, UpdateSourceTrigger=PropertyChanged}" Width="50" FontSize="12" />
+                                                <TextBlock Text="mm" FontSize="11" Foreground="#8c9cb3" VerticalAlignment="Center" Margin="4,0,0,0" />
+                                            </StackPanel>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="1" Margin="4,0,0,0">
+                                            <TextBlock Text="المسافة بين العناصر (Spacing):" FontSize="11" Foreground="#8c9cb3" Margin="0,0,0,2" />
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBox Text="{Binding CustomSpacingMm, UpdateSourceTrigger=PropertyChanged}" Width="50" FontSize="12" />
+                                                <TextBlock Text="mm" FontSize="11" Foreground="#8c9cb3" VerticalAlignment="Center" Margin="4,0,0,0" />
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <CheckBox IsChecked="{Binding CustomShowCutMarks}" Content="علامات القص (Cut Marks)" Margin="0,4,0,0" />
+                                </StackPanel>
+                            </Border>
+
+                            <!-- STEP 4: PACKING & MANUAL ADJUSTMENT -->
+                            <Border Background="#171c26" CornerRadius="8" BorderBrush="#252d3d" BorderThickness="1" Padding="12" Margin="0,0,0,12">
+                                <StackPanel Orientation="Vertical">
+                                    <TextBlock Text="4. التوزيع والتحكم اليدوي (Layout &amp; Adjust)" FontWeight="Bold" FontSize="14" Foreground="#ff6d00" Margin="0,0,0,8" />
+
+                                    <Grid Margin="0,0,0,8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <Button Grid.Column="0" Command="{Binding AutoLayoutCustomSizeCommand}" Style="{StaticResource PrimaryButtonStyle}" Content="⚡ توزيع تلقائي (Auto)" Margin="0,0,4,0" Height="34" />
+                                        <Button Grid.Column="1" Command="{Binding ResetCustomLayoutCommand}" Style="{StaticResource DarkButtonStyle}" Content="↺ إعادة ضبط (Reset)" Margin="4,0,0,0" Height="34" />
+                                    </Grid>
+
+                                    <!-- Manual Adjustment Toolbar -->
+                                    <Border Background="#121620" CornerRadius="6" Padding="8" Margin="0,0,0,4">
+                                        <StackPanel Orientation="Vertical">
+                                            <TextBlock Text="تحكم يدوي بالعنصر المحدد على الورقة:" FontSize="11" Foreground="#8c9cb3" Margin="0,0,0,6" />
+                                            <WrapPanel>
+                                                <Button Command="{Binding RotateSelectedPlanItemCommand}" Content="⟳ تدوير" Style="{StaticResource DarkButtonStyle}" Padding="8,4" Margin="2" ToolTip="تدوير 90 درجة" />
+                                                <Button Command="{Binding DeleteSelectedPlanItemCommand}" Content="🗑️ حذف" Style="{StaticResource DarkButtonStyle}" Padding="8,4" Margin="2" ToolTip="حذف العنصر من الورقة" />
+                                                <Button Command="{Binding MoveSelectedPlanItemCommand}" CommandParameter="up" Content="▲ أعلى" Style="{StaticResource DarkButtonStyle}" Padding="6,4" Margin="2" />
+                                                <Button Command="{Binding MoveSelectedPlanItemCommand}" CommandParameter="down" Content="▼ أسفل" Style="{StaticResource DarkButtonStyle}" Padding="6,4" Margin="2" />
+                                                <Button Command="{Binding MoveSelectedPlanItemCommand}" CommandParameter="right" Content="◀ يمين" Style="{StaticResource DarkButtonStyle}" Padding="6,4" Margin="2" />
+                                                <Button Command="{Binding MoveSelectedPlanItemCommand}" CommandParameter="left" Content="▶ يسار" Style="{StaticResource DarkButtonStyle}" Padding="6,4" Margin="2" />
+                                            </WrapPanel>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <!-- Summary -->
+                                    <Border Background="#1a2318" CornerRadius="4" Padding="8,6" Margin="0,6,0,0">
+                                        <TextBlock FontWeight="Bold" FontSize="12" Foreground="#00e676" HorizontalAlignment="Center">
+                                            <TextBlock.Text>
+                                                <MultiBinding StringFormat="الصفحات: {0}  |  العناصر: {1}  |  إجمالي النسخ: {2}">
+                                                    <Binding Path="TotalPages" />
+                                                    <Binding Path="CustomTotalItemsCount" />
+                                                    <Binding Path="CustomTotalCopiesCount" />
+                                                </MultiBinding>
+                                            </TextBlock.Text>
+                                        </TextBlock>
+                                    </Border>
+                                </StackPanel>
+                            </Border>
+
+                        </StackPanel>
+
+                        <!-- ============================================== -->
+                        <!-- STEP 4: EXPORT PDF (SHARED ACROSS MODES)       -->
+                        <!-- ============================================== -->
+                        <Border Background="#171c26" CornerRadius="8" BorderBrush="#252d3d" BorderThickness="1" Padding="12" Margin="0,0,0,12">
+                            <StackPanel Orientation="Vertical">
+                                <TextBlock Text="الطباعة والتصدير النهائي (Print-ready PDF)" FontWeight="Bold" FontSize="14" Foreground="#00E5FF" Margin="0,0,0,10" />
+
+                                <Button Command="{Binding ExportPdfCommand}"
+                                        Style="{StaticResource PrimaryButtonStyle}"
+                                        Height="48" Margin="0,0,0,8">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="🖨️" FontSize="20" Margin="0,0,8,0" VerticalAlignment="Center" />
+                                        <TextBlock Text="تصدير ملف PDF جاهز للطباعة (300 DPI)" FontSize="14" FontWeight="Bold" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </Button>
+
+                                <Button Command="{Binding OpenPdfCommand}"
+                                        IsEnabled="{Binding HasExportedPdf}"
+                                        Style="{StaticResource DarkButtonStyle}"
+                                        Content="📄 فتح ملف الـ PDF الأخير للمعاينة والطباعة"
+                                        Height="36" />
+                            </StackPanel>
+                        </Border>
+
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+
+            <!-- SPLITTER -->
+            <GridSplitter Grid.Column="1" HorizontalAlignment="Stretch" Background="#232a3b" />
+
+            <!-- RIGHT SHEET PREVIEW PANEL -->
+            <Grid Grid.Column="2" Background="#0b0d13">
+                <Grid.RowDefinitions>
+                    <!-- Preview Toolbar -->
+                    <RowDefinition Height="Auto" />
+                    <!-- Sheet Canvas Container -->
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <!-- Sheet Preview Toolbar -->
+                <Border Grid.Row="0" Background="#141822" BorderBrush="#232a3b" BorderThickness="0,0,0,1" Padding="16,8">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <!-- Sheet Info -->
+                            <ColumnDefinition Width="*" />
+                            <!-- Page Navigation -->
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Sheet Info -->
+                        <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                            <Border Background="#1f2533" CornerRadius="4" Padding="8,4" Margin="0,0,10,0">
+                                <TextBlock Foreground="#00E5FF" FontWeight="Bold" FontSize="12">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Text" Value="{Binding SelectedTemplate.Name, FallbackValue='A4 وجه وظهر'}" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsPersonalPhotoMode}" Value="True">
+                                                    <Setter Property="Text" Value="{Binding SelectedPhotoProfile.Name, FallbackValue='صورة شخصية 4×6'}" />
+                                                    <Setter Property="Foreground" Value="#b388ff" />
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding IsGenericDocumentsMode}" Value="True">
+                                                    <Setter Property="Text" Value="{Binding SelectedDocument.FileName, FallbackValue='مستند عام'}" />
+                                                    <Setter Property="Foreground" Value="#00e676" />
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding IsCustomSizeMode}" Value="True">
+                                                    <Setter Property="Text" Value="توزيع مقاسات مخصصة (Custom Size)" />
+                                                    <Setter Property="Foreground" Value="#ff6d00" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </Border>
+                            <TextBlock Text="المعاينة مطابقة 100% للطباعة ومقاسات الورق الحقيقية بدقة 300 DPI (WYSIWYG)" Foreground="#8592a6" FontSize="12" VerticalAlignment="Center" />
+                        </StackPanel>
+
+                        <!-- Pagination Navigation -->
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                            <Button Command="{Binding PreviousPageCommand}"
+                                    IsEnabled="{Binding CanGoPrevPage}"
+                                    Content="◀ الصفحة السابقة"
+                                    Style="{StaticResource DarkButtonStyle}"
+                                    Padding="10,5" FontSize="12" Margin="4,0" />
+
+                            <Border Background="#1f2533" CornerRadius="4" Padding="12,5" Margin="4,0">
+                                <TextBlock Text="{Binding PageIndicatorText}" Foreground="#FFFFFF" FontWeight="Bold" FontSize="12" VerticalAlignment="Center" />
+                            </Border>
+
+                            <Button Command="{Binding NextPageCommand}"
+                                    IsEnabled="{Binding CanGoNextPage}"
+                                    Content="الصفحة التالية ▶"
+                                    Style="{StaticResource DarkButtonStyle}"
+                                    Padding="10,5" FontSize="12" Margin="4,0" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- Visual Paper Sheet Canvas -->
+                <views:SheetPreviewControl Grid.Row="1"
+                                           Plan="{Binding CurrentPlan}"
+                                           PageIndex="{Binding CurrentPageIndex}"
+                                           Cards="{Binding Cards}"
+                                           PersonalPhotos="{Binding PersonalPhotos}"
+                                           Documents="{Binding Documents}"
+                                           SelectedDocument="{Binding SelectedDocument}"
+                                           CustomItems="{Binding CustomItems}"
+                                           SelectedPlanItem="{Binding SelectedPlanItem, Mode=TwoWay}"
+                                           Margin="16" />
+            </Grid>
+        </Grid>
+
+        <!-- BUSY OVERLAY -->
+        <Border Grid.RowSpan="2" Background="#CC090b10"
+                Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}">
+            <Border Background="#171c26" CornerRadius="10" BorderBrush="#2e384d" BorderThickness="1"
+                    Padding="32,24" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <StackPanel Orientation="Vertical" HorizontalAlignment="Center">
+                    <TextBlock Text="⚙️" FontSize="36" HorizontalAlignment="Center" Margin="0,0,0,12" />
+                    <TextBlock Text="{Binding BusyMessage}" FontSize="15" FontWeight="Bold" Foreground="#FFFFFF" HorizontalAlignment="Center" Margin="0,0,0,8" />
+                    <ProgressBar IsIndeterminate="True" Width="260" Height="6" Background="#262f40" Foreground="#00E5FF" BorderThickness="0" />
+                </StackPanel>
+            </Border>
+        </Border>
+    </Grid>
+</Window>

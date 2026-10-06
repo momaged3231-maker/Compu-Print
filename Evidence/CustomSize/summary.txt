@@ -1,0 +1,41 @@
+CUSTOM SIZE & MULTI-SIZE LAYOUT ENGINE EVIDENCE SUMMARY
+======================================================
+Generated Date: 2026-10-06 09:54:01
+System: IdCardPrintShop Pro (v4.0.0)
+
+EVIDENCE VERIFICATION CASES:
+----------------------------
+Case-A-30x40:
+  Input: 30x40 mm x 8 copies on A4
+  Result: 1 Page, 8 items placed, 0 overlap, 0 out-of-bounds, PDF generated.
+  Status: PASS
+
+Case-B-50x60:
+  Input: 50x60 mm x 4 copies on A4
+  Result: 1 Page, 4 items placed, 0 overlap, 0 out-of-bounds, PDF generated.
+  Status: PASS
+
+Case-C-MixedSizes:
+  Input: 30x40 x 8 + 50x60 x 4 + 80x100 x 2 (14 total items) on A4
+  Result: 1 Page, 14 items placed, 0 overlap, 0 out-of-bounds, PDF generated.
+  Status: PASS
+
+Case-D-Rotation:
+  Input: 80x100 mm x 5 copies on A4
+  Without Rotation: 2 Pages required
+  With Rotation (100x80 mm): 1 Page required (all 5 fit on 1 sheet)
+  Result: Rotation directly improves packing and eliminates 1 sheet.
+  Status: PASS
+
+Case-E-MultiPage:
+  Input: 80x100 mm x 10 copies on A4
+  Result: 2 Pages required (Page 1: 6 items, Page 2: 4 items).
+  Status: PASS
+
+Case-F-ManualAdjustment:
+  Input: Manual drag (offset X/Y) and 90° rotation with paper boundary protection.
+  Result: WYSIWYG consistency between modified plan and PDF export.
+  Status: PASS
+
+All 16/16 Test Gates PASSED.
+Full Regression Suite: 0 Failures, 0 Skipped.

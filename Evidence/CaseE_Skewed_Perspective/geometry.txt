@@ -1,0 +1,15 @@
+Detection Case: SingleCard
+Cards Count: 1
+IsConfident: True
+Card #1 (بطاقة 1) [Role: Front]:
+  Corner 1 (Top-Left):     (279.0, 217.0)
+  Corner 2 (Top-Right):    (882.0, 160.0)
+  Corner 3 (Bottom-Right): (822.0, 685.0)
+  Corner 4 (Bottom-Left):  (205.0, 622.0)
+  Width (Top/Bottom avg):  612.9 px
+  Height (Left/Right avg): 470.1 px
+  Aspect Ratio:            1.304
+  Confidence:              78%
+  Rotation Quarter Turns:  0 (Total: 0°)
+Rectified Result Dimensions: 626 × 395 px
+Rectified Aspect Ratio: 1.585

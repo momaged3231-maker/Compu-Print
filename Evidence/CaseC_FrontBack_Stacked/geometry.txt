@@ -1,0 +1,23 @@
+Detection Case: TwoCards
+Cards Count: 2
+IsConfident: True
+Card #1 (بطاقة أ (الوجه المقترح)) [Role: Front]:
+  Corner 1 (Top-Left):     (267.0, 119.0)
+  Corner 2 (Top-Right):    (730.0, 117.0)
+  Corner 3 (Bottom-Right): (735.0, 411.0)
+  Corner 4 (Bottom-Left):  (268.0, 415.0)
+  Width (Top/Bottom avg):  465.0 px
+  Height (Left/Right avg): 295.0 px
+  Aspect Ratio:            1.576
+  Confidence:              85%
+  Rotation Quarter Turns:  0 (Total: 0°)
+Card #2 (بطاقة ب (الظهر المقترح)) [Role: Back]:
+  Corner 1 (Top-Left):     (268.0, 558.0)
+  Corner 2 (Top-Right):    (728.0, 556.0)
+  Corner 3 (Bottom-Right): (735.0, 851.0)
+  Corner 4 (Bottom-Left):  (268.0, 855.0)
+  Width (Top/Bottom avg):  463.5 px
+  Height (Left/Right avg): 296.0 px
+  Aspect Ratio:            1.566
+  Confidence:              85%
+  Rotation Quarter Turns:  0 (Total: 0°)

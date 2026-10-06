@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="IdCardPrintShop.Tests/IdCardPrintShop.Tests.csproj" />
+  <Project Path="IdCardPrintShop/IdCardPrintShop.csproj" />
+</Solution>

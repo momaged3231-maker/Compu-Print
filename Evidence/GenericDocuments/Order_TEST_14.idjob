@@ -1,0 +1,59 @@
+{
+  "orderNumber": "#TEST-14-RELOAD",
+  "customerName": "\u0645\u062F\u0631\u0633\u0629 \u0627\u0644\u0646\u0647\u0636\u0629 \u0627\u0644\u062D\u062F\u064A\u062B\u0629",
+  "notes": "\u0637\u0644\u0628 \u0637\u0628\u0627\u0639\u0629 \u0627\u0645\u062A\u062D\u0627\u0646\u0627\u062A \u0648\u0644\u0627\u0641\u062A\u0627\u062A",
+  "createdAt": "2026-10-06T09:54:04.7973917+03:00",
+  "inputFiles": [],
+  "detectedCards": [],
+  "selectedTemplateId": "GenericDocuments",
+  "copies": 1,
+  "outputPdfPath": "",
+  "jobType": "GenericDocuments",
+  "personalPhotos": [],
+  "documents": [
+    {
+      "id": "3bca7f85da7b41448f5cbfc8a627f113",
+      "fileName": "test14_exam.pdf",
+      "originalPath": "C:\\Users\\moham\\OneDrive\\\u0633\u0637\u062D \u0627\u0644\u0645\u0643\u062A\u0628\\P\\Evidence\\GenericDocuments\\Input\\test14_exam.pdf",
+      "fileType": 0,
+      "pageCount": 2,
+      "printMode": 0,
+      "paperSizeName": "A4",
+      "copies": 2,
+      "orientation": 1,
+      "scaling": 0,
+      "duplex": 0,
+      "pageRange": "1-2",
+      "status": 0,
+      "statusMessage": "\u0645\u0633\u062A\u0646\u062F PDF (2 \u0635\u0641\u062D\u0629)",
+      "convertedPdfPath": null,
+      "resolvedPageIndices": [
+        0,
+        1
+      ]
+    },
+    {
+      "id": "0ec74531df734378b662bc037bd745ba",
+      "fileName": "test14_card.png",
+      "originalPath": "C:\\Users\\moham\\OneDrive\\\u0633\u0637\u062D \u0627\u0644\u0645\u0643\u062A\u0628\\P\\Evidence\\GenericDocuments\\Input\\test14_card.png",
+      "fileType": 1,
+      "pageCount": 1,
+      "printMode": 1,
+      "paperSizeName": "A5",
+      "copies": 3,
+      "orientation": 2,
+      "scaling": 0,
+      "duplex": 0,
+      "pageRange": "All",
+      "status": 0,
+      "statusMessage": "\u0635\u0648\u0631\u0629 (600 \u00D7 400 px)",
+      "convertedPdfPath": null,
+      "resolvedPageIndices": [
+        0
+      ]
+    }
+  ],
+  "customSizeItems": [],
+  "customSizeParameters": null,
+  "exportTimestamp": null
+}
