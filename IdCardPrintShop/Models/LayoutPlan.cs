@@ -17,6 +17,9 @@ namespace IdCardPrintShop.Models
         public string SourceImagePath { get; set; } = string.Empty;
         public string ItemName { get; set; } = string.Empty;
         public string CustomItemId { get; set; } = string.Empty;
+        public string StudentName { get; set; } = string.Empty;
+        public bool IncludeNameLabel { get; set; } = false;
+        public double NameFontSizePt { get; set; } = 8.5;
     }
 
     public class LayoutPlan

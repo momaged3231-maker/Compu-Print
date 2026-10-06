@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 using IdCardPrintShop.Services;
 using IdCardPrintShop.ViewModels;
@@ -108,7 +109,23 @@ namespace IdCardPrintShop
                 var files = (string[])e.Data.GetData(DataFormats.FileDrop);
                 if (files == null || files.Length == 0) return;
 
-                if (ViewModel.AppMode == ApplicationMode.CustomSize)
+                // If user drops a folder directly
+                if (Directory.Exists(files[0]))
+                {
+                    ViewModel.SwitchToSchoolOrders();
+                    await ViewModel.ScanSchoolFolderAsync(files[0]);
+                    return;
+                }
+
+                if (ViewModel.AppMode == ApplicationMode.SchoolOrders)
+                {
+                    var parentDir = Path.GetDirectoryName(files[0]);
+                    if (!string.IsNullOrEmpty(parentDir) && Directory.Exists(parentDir))
+                    {
+                        await ViewModel.ScanSchoolFolderAsync(parentDir);
+                    }
+                }
+                else if (ViewModel.AppMode == ApplicationMode.CustomSize)
                 {
                     var validExtensions = new[] { ".jpg", ".jpeg", ".png", ".bmp", ".webp" };
                     var imageFiles = files
@@ -169,6 +186,39 @@ namespace IdCardPrintShop
                             await ViewModel.ProcessImportedFilesAsync(imageFiles);
                         }
                     }
+                }
+            }
+        }
+
+        protected override async void OnKeyDown(KeyEventArgs e)
+        {
+            base.OnKeyDown(e);
+
+            if (ViewModel.AppMode == ApplicationMode.SchoolOrders)
+            {
+                if (e.Key == Key.O && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
+                {
+                    e.Handled = true;
+                    await ViewModel.ImportSchoolFolderAsync();
+                }
+                else if (e.Key == Key.F && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
+                {
+                    e.Handled = true;
+                    StudentSearchBox?.Focus();
+                    StudentSearchBox?.SelectAll();
+                }
+                else if (e.Key == Key.Escape)
+                {
+                    if (ViewModel.IsBatchProcessing)
+                    {
+                        e.Handled = true;
+                        ViewModel.CancelBatchProcessing();
+                    }
+                }
+                else if (e.Key == Key.F5)
+                {
+                    e.Handled = true;
+                    await ViewModel.RefreshSchoolScanAsync();
                 }
             }
         }

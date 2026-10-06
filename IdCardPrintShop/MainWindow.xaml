@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:views="clr-namespace:IdCardPrintShop.Views"
         xmlns:models="clr-namespace:IdCardPrintShop.Models"
+        xmlns:conv="clr-namespace:IdCardPrintShop.Converters"
         mc:Ignorable="d"
         Title="Smart Print Shop Pro | نظام معالجة وطباعة البطاقات والصور الشخصية"
         Height="920" Width="1480"
@@ -17,6 +18,9 @@
 
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
+        <conv:InverseBooleanConverter x:Key="InverseBoolConverter" />
+        <conv:IntToVisibilityConverter x:Key="IntToVis" />
+        <conv:InverseBoolToVisibilityConverter x:Key="InverseBoolToVis" />
 
         <!-- Button Style -->
         <Style x:Key="DarkButtonStyle" TargetType="Button">
@@ -214,6 +218,27 @@
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="📐" FontSize="14" Margin="0,0,6,0" VerticalAlignment="Center" />
                                 <TextBlock Text="مقاسات مخصصة (Custom Size)" FontSize="12" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+
+                        <Button Command="{Binding SwitchToSchoolOrdersCommand}" Padding="14,6" Margin="2,0,0,0">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource DarkButtonStyle}">
+                                    <Setter Property="Background" Value="Transparent" />
+                                    <Setter Property="BorderThickness" Value="0" />
+                                    <Setter Property="Foreground" Value="#8c9cb3" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsSchoolOrdersMode}" Value="True">
+                                            <Setter Property="Background" Value="#e91e63" />
+                                            <Setter Property="Foreground" Value="#ffffff" />
+                                            <Setter Property="FontWeight" Value="Bold" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="🏫" FontSize="14" Margin="0,0,6,0" VerticalAlignment="Center" />
+                                <TextBlock Text="باقات المدارس" FontSize="12" VerticalAlignment="Center" />
                             </StackPanel>
                         </Button>
                     </StackPanel>
@@ -1068,9 +1093,365 @@
                         </StackPanel>
 
                         <!-- ============================================== -->
+                        <!-- E. SCHOOL ORDERS WORKFLOW (IsSchoolOrdersMode) -->
+                        <!-- ============================================== -->
+                        <StackPanel Visibility="{Binding IsSchoolOrdersMode, Converter={StaticResource BoolToVis}}">
+
+                            <!-- STEP 1: IMPORT & SCAN FOLDER -->
+                            <Border Background="#171c26" CornerRadius="8" BorderBrush="#252d3d" BorderThickness="1" Padding="12" Margin="0,0,0,12">
+                                <StackPanel Orientation="Vertical">
+                                    <Grid Margin="0,0,0,8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="1. اختيار مجلد الطلاب (Student Folder)" FontWeight="Bold" FontSize="14" Foreground="#ff4081" VerticalAlignment="Center" />
+                                        <Button Grid.Column="1" Command="{Binding RefreshSchoolScanCommand}" ToolTip="إعادة فحص المجلد (F5)" Content="🔄 تحديث" Style="{StaticResource DarkButtonStyle}" Padding="6,2" FontSize="11" />
+                                    </Grid>
+
+                                    <!-- Large Drag & Drop Zone -->
+                                    <Border Background="#1c222e"
+                                            BorderBrush="#3a4559"
+                                            BorderThickness="2"
+                                            CornerRadius="6"
+                                            Padding="14"
+                                            AllowDrop="True"
+                                            DragEnter="OnDropZoneDragEnter"
+                                            DragLeave="OnDropZoneDragLeave"
+                                            Drop="OnDropZoneDrop"
+                                            Cursor="Hand"
+                                            Margin="0,0,0,10">
+                                        <StackPanel Orientation="Vertical" HorizontalAlignment="Center">
+                                            <TextBlock Text="🏫 📥" FontSize="26" HorizontalAlignment="Center" Margin="0,0,0,4" />
+                                            <TextBlock Text="اسحب مجلد صور الطلاب هنا" FontSize="13" FontWeight="SemiBold" Foreground="#FFFFFF" HorizontalAlignment="Center" />
+                                            <TextBlock Text="أو اختر مجلداً من الكمبيوتر (JPG, JPEG, PNG, WEBP, BMP)" FontSize="11" Foreground="#8592a6" HorizontalAlignment="Center" Margin="0,4,0,8" />
+                                            <Button Command="{Binding ImportSchoolFolderCommand}" Content="اختيار مجلد الطلاب... (Ctrl+O)" Style="{StaticResource DarkButtonStyle}" HorizontalAlignment="Center" />
+                                        </StackPanel>
+                                    </Border>
+
+                                    <!-- School & Folder Info -->
+                                    <StackPanel Visibility="{Binding SchoolHasScannedFolder, Converter={StaticResource BoolToVis}}">
+                                        <Grid Margin="0,0,0,8">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0" Text="اسم المدرسة:" FontSize="12" Foreground="#8c9cb3" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                            <TextBox Grid.Column="1" Text="{Binding SchoolName, UpdateSourceTrigger=PropertyChanged}" FontSize="12" FontWeight="Bold" />
+                                        </Grid>
+
+                                        <!-- Scan Stats Badges -->
+                                        <Grid Margin="0,0,0,6">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <Border Grid.Column="0" Background="#1c2536" CornerRadius="6" Padding="8,6" Margin="0,0,4,0">
+                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                    <TextBlock Text="📁 إجمالي الملفات: " FontSize="11" Foreground="#8c9cb3" />
+                                                    <TextBlock Text="{Binding SchoolTotalFiles}" FontWeight="Bold" FontSize="12" Foreground="#FFFFFF" />
+                                                </StackPanel>
+                                            </Border>
+                                            <Border Grid.Column="1" Background="#152e25" CornerRadius="6" Padding="8,6" Margin="4,0,0,0">
+                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                    <TextBlock Text="✅ صور الطلاب: " FontSize="11" Foreground="#00e676" />
+                                                    <TextBlock Text="{Binding SchoolValidPhotos}" FontWeight="Bold" FontSize="12" Foreground="#00e676" />
+                                                </StackPanel>
+                                            </Border>
+                                        </Grid>
+
+                                        <Grid Margin="0,0,0,4">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <Border Grid.Column="0" Background="#332415" CornerRadius="6" Padding="8,4" Margin="0,0,4,0"
+                                                    Visibility="{Binding SchoolUnsupportedCount, Converter={StaticResource IntToVis}}">
+                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                    <TextBlock Text="⚠️ غير مدعومة: " FontSize="11" Foreground="#ffab00" />
+                                                    <TextBlock Text="{Binding SchoolUnsupportedCount}" FontWeight="Bold" FontSize="11" Foreground="#ffab00" />
+                                                </StackPanel>
+                                            </Border>
+                                            <Border Grid.Column="1" Background="#361a1a" CornerRadius="6" Padding="8,4" Margin="4,0,0,0"
+                                                    Visibility="{Binding SchoolInvalidCount, Converter={StaticResource IntToVis}}">
+                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                    <TextBlock Text="❌ صور بها أخطاء: " FontSize="11" Foreground="#ff5252" />
+                                                    <TextBlock Text="{Binding SchoolInvalidCount}" FontWeight="Bold" FontSize="11" Foreground="#ff5252" />
+                                                </StackPanel>
+                                            </Border>
+                                        </Grid>
+
+                                        <!-- Unsupported Files Warning Notice -->
+                                        <Expander Header="عرض الملفات غير المدعومة المستبعدة" Foreground="#ffab00" FontSize="11" Margin="0,4,0,0"
+                                                  Visibility="{Binding SchoolUnsupportedCount, Converter={StaticResource IntToVis}}">
+                                            <ItemsControl ItemsSource="{Binding SchoolUnsupportedFiles}" MaxHeight="80">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <TextBlock Text="{Binding}" FontSize="10" Foreground="#d2d8e3" Margin="4,1" />
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </Expander>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- STEP 2: TEMPLATE & SETTINGS -->
+                            <Border Background="#171c26" CornerRadius="8" BorderBrush="#252d3d" BorderThickness="1" Padding="12" Margin="0,0,0,12">
+                                <StackPanel Orientation="Vertical">
+                                    <TextBlock Text="2. اختيار باقة الطباعة (Package Template)" FontWeight="Bold" FontSize="14" Foreground="#ff4081" Margin="0,0,0,8" />
+
+                                    <ComboBox ItemsSource="{Binding SchoolTemplates}"
+                                              SelectedItem="{Binding SelectedSchoolTemplate}"
+                                              DisplayMemberPath="Name"
+                                              FontSize="13" FontWeight="SemiBold"
+                                              Margin="0,0,0,6" />
+
+                                    <TextBlock Text="{Binding SelectedSchoolTemplate.Description}" FontSize="11" Foreground="#8c9cb3" TextWrapping="Wrap" Margin="0,0,0,8" />
+
+                                    <!-- Custom Template Controls (Visible if tpl-custom) -->
+                                    <StackPanel Margin="0,0,0,8">
+                                        <StackPanel.Style>
+                                            <Style TargetType="StackPanel">
+                                                <Setter Property="Visibility" Value="Collapsed" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding SelectedSchoolTemplate.Id}" Value="tpl-custom">
+                                                        <Setter Property="Visibility" Value="Visible" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </StackPanel.Style>
+                                        <Grid Margin="0,0,0,6">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel Grid.Column="0" Margin="0,0,4,0">
+                                                <TextBlock Text="العرض (مم):" FontSize="11" Foreground="#8c9cb3" Margin="0,0,0,2" />
+                                                <TextBox Text="{Binding CustomSchoolPhotoWidthMm, UpdateSourceTrigger=PropertyChanged}" HorizontalContentAlignment="Center" />
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="1" Margin="2,0,2,0">
+                                                <TextBlock Text="الارتفاع (مم):" FontSize="11" Foreground="#8c9cb3" Margin="0,0,0,2" />
+                                                <TextBox Text="{Binding CustomSchoolPhotoHeightMm, UpdateSourceTrigger=PropertyChanged}" HorizontalContentAlignment="Center" />
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="2" Margin="4,0,0,0">
+                                                <TextBlock Text="العدد للطالب:" FontSize="11" Foreground="#8c9cb3" Margin="0,0,0,2" />
+                                                <TextBox Text="{Binding CustomSchoolPhotoQuantity, UpdateSourceTrigger=PropertyChanged}" HorizontalContentAlignment="Center" />
+                                            </StackPanel>
+                                        </Grid>
+                                    </StackPanel>
+
+                                    <!-- Options -->
+                                    <StackPanel Orientation="Vertical">
+                                        <CheckBox IsChecked="{Binding SchoolIncludeStudentName}" Content="طباعة شريط اسم الطالب أسفل الصور" Margin="0,0,0,6" />
+                                        <CheckBox IsChecked="{Binding SchoolGenerateIndividualPdfs}" Content="تصدير ملف PDF منفصل لكل طالب بجانب الملف الشامل" Margin="0,0,0,6" />
+                                        <CheckBox IsChecked="{Binding ShowCutMarks}" Content="علامات القص الاحترافية لمقص الورق" Margin="0,0,0,2" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- STEP 3: STUDENT REVIEW TABLE -->
+                            <Border Background="#171c26" CornerRadius="8" BorderBrush="#252d3d" BorderThickness="1" Padding="12" Margin="0,0,0,12">
+                                <StackPanel Orientation="Vertical">
+                                    <Grid Margin="0,0,0,8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="3. مراجعة وتعديل بيانات الطلاب" FontWeight="Bold" FontSize="14" Foreground="#ff4081" VerticalAlignment="Center" />
+                                        <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                            <Button Command="{Binding SelectAllStudentsCommand}" Content="الكل ✓" Style="{StaticResource DarkButtonStyle}" Padding="6,3" FontSize="11" Margin="2,0" />
+                                            <Button Command="{Binding DeselectAllStudentsCommand}" Content="إلغاء ✗" Style="{StaticResource DarkButtonStyle}" Padding="6,3" FontSize="11" Margin="2,0" />
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <!-- Search & Filters Toolbar -->
+                                    <Grid Margin="0,0,0,8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBox Grid.Column="0"
+                                                 x:Name="StudentSearchBox"
+                                                 Text="{Binding StudentSearchQuery, UpdateSourceTrigger=PropertyChanged}"
+                                                 Padding="6,4" FontSize="12"
+                                                 Margin="0,0,6,0" />
+                                        <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                            <Button Command="{Binding SetStudentFilterCommand}" CommandParameter="All" Content="الكل" Style="{StaticResource PresetButtonStyle}" />
+                                            <Button Command="{Binding SetStudentFilterCommand}" CommandParameter="Ready" Content="جاهز" Style="{StaticResource PresetButtonStyle}" />
+                                            <Button Command="{Binding SetStudentFilterCommand}" CommandParameter="Warnings" Content="تنبيهات" Style="{StaticResource PresetButtonStyle}" />
+                                            <Button Command="{Binding SetStudentFilterCommand}" CommandParameter="Errors" Content="أخطاء" Style="{StaticResource PresetButtonStyle}" />
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <!-- Sorting Buttons -->
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                        <TextBlock Text="الترتيب: " FontSize="11" Foreground="#8c9cb3" VerticalAlignment="Center" Margin="0,0,4,0" />
+                                        <Button Command="{Binding SetStudentSortCommand}" CommandParameter="NameAZ" Content="أ-ي" Style="{StaticResource PresetButtonStyle}" Margin="2,0" />
+                                        <Button Command="{Binding SetStudentSortCommand}" CommandParameter="NameZA" Content="ي-أ" Style="{StaticResource PresetButtonStyle}" Margin="2,0" />
+                                        <Button Command="{Binding SetStudentSortCommand}" CommandParameter="Original" Content="الملفات" Style="{StaticResource PresetButtonStyle}" Margin="2,0" />
+                                    </StackPanel>
+
+                                    <!-- Virtualized Student Table -->
+                                    <DataGrid ItemsSource="{Binding FilteredStudents}"
+                                              AutoGenerateColumns="False"
+                                              CanUserAddRows="False"
+                                              CanUserDeleteRows="False"
+                                              Background="#131720"
+                                              Foreground="#FFFFFF"
+                                              BorderBrush="#293345"
+                                              RowBackground="#181d28"
+                                              AlternatingRowBackground="#1e2432"
+                                              GridLinesVisibility="Horizontal"
+                                              HorizontalGridLinesBrush="#283244"
+                                              MaxHeight="260"
+                                              HeadersVisibility="Column"
+                                              EnableRowVirtualization="True"
+                                              VirtualizingPanel.IsVirtualizing="True"
+                                              VirtualizingPanel.VirtualizationMode="Recycling"
+                                              ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                              ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                                        <DataGrid.Columns>
+                                            <DataGridCheckBoxColumn Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="32" />
+                                            <DataGridTemplateColumn Header="الصورة" Width="52">
+                                                <DataGridTemplateColumn.CellTemplate>
+                                                    <DataTemplate>
+                                                        <Border Width="40" Height="40" CornerRadius="4" Background="#0f1218" Margin="2" ClipToBounds="True">
+                                                            <Image Source="{Binding Thumbnail}" Stretch="UniformToFill" />
+                                                        </Border>
+                                                    </DataTemplate>
+                                                </DataGridTemplateColumn.CellTemplate>
+                                            </DataGridTemplateColumn>
+                                            <DataGridTextColumn Header="اسم الطالب (قابل للتعديل)" Binding="{Binding StudentName, UpdateSourceTrigger=PropertyChanged}" Width="*" />
+                                            <DataGridTemplateColumn Header="الحالة" Width="80">
+                                                <DataGridTemplateColumn.CellTemplate>
+                                                    <DataTemplate>
+                                                        <Border CornerRadius="4" Padding="6,2" HorizontalAlignment="Center">
+                                                            <Border.Style>
+                                                                <Style TargetType="Border">
+                                                                    <Setter Property="Background" Value="#172e25" />
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding Status}" Value="Warning">
+                                                                            <Setter Property="Background" Value="#332415" />
+                                                                        </DataTrigger>
+                                                                        <DataTrigger Binding="{Binding Status}" Value="Failed">
+                                                                            <Setter Property="Background" Value="#3d1919" />
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </Border.Style>
+                                                            <TextBlock Text="{Binding StatusMessage}" FontSize="10" FontWeight="SemiBold" TextTrimming="CharacterEllipsis">
+                                                                <TextBlock.Style>
+                                                                    <Style TargetType="TextBlock">
+                                                                        <Setter Property="Foreground" Value="#00e676" />
+                                                                        <Style.Triggers>
+                                                                            <DataTrigger Binding="{Binding Status}" Value="Warning">
+                                                                                <Setter Property="Foreground" Value="#ffb300" />
+                                                                            </DataTrigger>
+                                                                            <DataTrigger Binding="{Binding Status}" Value="Failed">
+                                                                                <Setter Property="Foreground" Value="#ff5252" />
+                                                                            </DataTrigger>
+                                                                        </Style.Triggers>
+                                                                    </Style>
+                                                                </TextBlock.Style>
+                                                            </TextBlock>
+                                                        </Border>
+                                                    </DataTemplate>
+                                                </DataGridTemplateColumn.CellTemplate>
+                                            </DataGridTemplateColumn>
+                                        </DataGrid.Columns>
+                                    </DataGrid>
+
+                                    <!-- Big Execution Action Button -->
+                                    <Button Command="{Binding StartBatchProcessingCommand}"
+                                            IsEnabled="{Binding IsBatchProcessing, Converter={StaticResource InverseBoolConverter}}"
+                                            Height="50" Margin="0,12,0,0" Cursor="Hand">
+                                        <Button.Style>
+                                            <Style TargetType="Button">
+                                                <Setter Property="Background">
+                                                    <Setter.Value>
+                                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                                            <GradientStop Color="#e91e63" Offset="0" />
+                                                            <GradientStop Color="#ff4081" Offset="1" />
+                                                        </LinearGradientBrush>
+                                                    </Setter.Value>
+                                                </Setter>
+                                                <Setter Property="Foreground" Value="#FFFFFF" />
+                                                <Setter Property="FontWeight" Value="Bold" />
+                                                <Setter Property="Template">
+                                                    <Setter.Value>
+                                                        <ControlTemplate TargetType="Button">
+                                                            <Border Background="{TemplateBinding Background}" CornerRadius="8" Padding="12">
+                                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                            </Border>
+                                                        </ControlTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Style>
+                                        </Button.Style>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="⚡" FontSize="20" Margin="0,0,8,0" VerticalAlignment="Center" />
+                                            <TextBlock Text="إنشاء الباقة وتصدير الطباعة" FontSize="15" FontWeight="Bold" VerticalAlignment="Center" />
+                                        </StackPanel>
+                                    </Button>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- STEP 4: PROGRESS & SUMMARY -->
+                            <Border Background="#171c26" CornerRadius="8" BorderBrush="#252d3d" BorderThickness="1" Padding="12" Margin="0,0,0,12"
+                                    Visibility="{Binding IsBatchProcessing, Converter={StaticResource BoolToVis}}">
+                                <StackPanel Orientation="Vertical">
+                                    <TextBlock Text="جاري معالجة باقة الطلاب..." FontWeight="Bold" FontSize="13" Foreground="#00E5FF" Margin="0,0,0,6" />
+                                    <ProgressBar Value="{Binding BatchProgressPercentage}" Height="10" Background="#1c2536" Foreground="#e91e63" BorderThickness="0" Margin="0,0,0,6" />
+                                    <TextBlock Text="{Binding BatchProgressText}" FontSize="11" Foreground="#FFFFFF" Margin="0,0,0,6" />
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                                            <TextBlock Text="ناجح: " Foreground="#00e676" FontSize="11" />
+                                            <TextBlock Text="{Binding BatchSuccessCount}" Foreground="#00e676" FontWeight="Bold" FontSize="11" Margin="0,0,10,0" />
+                                            <TextBlock Text="أخطاء: " Foreground="#ff5252" FontSize="11" />
+                                            <TextBlock Text="{Binding BatchFailedCount}" Foreground="#ff5252" FontWeight="Bold" FontSize="11" />
+                                        </StackPanel>
+                                        <Button Grid.Column="1" Command="{Binding CancelBatchProcessingCommand}" Content="إلغاء (Esc)" Style="{StaticResource DarkButtonStyle}" Padding="8,4" FontSize="11" />
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- SUMMARY AFTER COMPLETION -->
+                            <Border Background="#13261f" CornerRadius="8" BorderBrush="#00e676" BorderThickness="1" Padding="12" Margin="0,0,0,12"
+                                    Visibility="{Binding IsBatchComplete, Converter={StaticResource BoolToVis}}">
+                                <StackPanel Orientation="Vertical">
+                                    <TextBlock Text="🏫 اكتملت باقة المدارس بنجاح!" FontWeight="Bold" FontSize="14" Foreground="#00e676" Margin="0,0,0,6" />
+                                    <TextBlock Text="{Binding LastBatchResult.PagesGenerated, StringFormat='• عدد الصفحات المولدة: {0} صفحة A4 جاهزة'}" FontSize="12" Foreground="#FFFFFF" Margin="0,0,0,4" />
+                                    <TextBlock Text="{Binding LastBatchResult.SuccessCount, StringFormat='• الطلاب المكتملون: {0} طالب'}" FontSize="12" Foreground="#d2d8e3" Margin="0,0,0,8" />
+
+                                    <Grid Margin="0,0,0,6">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <Button Grid.Column="0" Command="{Binding OpenSchoolCombinedPdfCommand}" Content="📄 فتح ملف PDF" Style="{StaticResource DarkButtonStyle}" Margin="0,0,4,0" Height="34" />
+                                        <Button Grid.Column="1" Command="{Binding OpenSchoolOutputFolderCommand}" Content="📂 فتح المجلد" Style="{StaticResource DarkButtonStyle}" Margin="4,0,0,0" Height="34" />
+                                    </Grid>
+
+                                    <Button Command="{Binding ReprocessFailedStudentsCommand}"
+                                            Visibility="{Binding LastBatchResult.FailedCount, Converter={StaticResource IntToVis}}"
+                                            Content="🔄 إعادة معالجة الأخطاء فقط" Style="{StaticResource DarkButtonStyle}" Foreground="#ffb300" Margin="0,0,0,6" Height="32" />
+
+                                    <Button Command="{Binding ResetSchoolOrderCommand}" Content="✨ طلب مدرسة جديد" Style="{StaticResource DarkButtonStyle}" Height="32" />
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+
+                        <!-- ============================================== -->
                         <!-- STEP 4: EXPORT PDF (SHARED ACROSS MODES)       -->
                         <!-- ============================================== -->
-                        <Border Background="#171c26" CornerRadius="8" BorderBrush="#252d3d" BorderThickness="1" Padding="12" Margin="0,0,0,12">
+                        <Border Background="#171c26" CornerRadius="8" BorderBrush="#252d3d" BorderThickness="1" Padding="12" Margin="0,0,0,12"
+                                Visibility="{Binding IsSchoolOrdersMode, Converter={StaticResource InverseBoolToVis}}">
                             <StackPanel Orientation="Vertical">
                                 <TextBlock Text="الطباعة والتصدير النهائي (Print-ready PDF)" FontWeight="Bold" FontSize="14" Foreground="#00E5FF" Margin="0,0,0,10" />
 
@@ -1136,6 +1517,10 @@
                                                 <DataTrigger Binding="{Binding IsCustomSizeMode}" Value="True">
                                                     <Setter Property="Text" Value="توزيع مقاسات مخصصة (Custom Size)" />
                                                     <Setter Property="Foreground" Value="#ff6d00" />
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding IsSchoolOrdersMode}" Value="True">
+                                                    <Setter Property="Text" Value="{Binding SelectedSchoolTemplate.Name, FallbackValue='باقة مدارس'}" />
+                                                    <Setter Property="Foreground" Value="#ff4081" />
                                                 </DataTrigger>
                                             </Style.Triggers>
                                         </Style>

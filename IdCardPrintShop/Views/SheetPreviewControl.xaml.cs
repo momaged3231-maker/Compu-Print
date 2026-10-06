@@ -285,7 +285,34 @@ namespace IdCardPrintShop.Views
                         Stretch = (SelectedDocument != null && SelectedDocument.Scaling == DocumentScalingMode.FitToPage) ? Stretch.Uniform : Stretch.Fill
                     };
                     RenderOptions.SetBitmapScalingMode(img, BitmapScalingMode.HighQuality);
-                    cardBorder.Child = img;
+
+                    if (item.IncludeNameLabel && !string.IsNullOrWhiteSpace(item.StudentName))
+                    {
+                        var containerGrid = new Grid();
+                        containerGrid.Children.Add(img);
+
+                        var labelBorder = new Border
+                        {
+                            VerticalAlignment = VerticalAlignment.Bottom,
+                            Background = new SolidColorBrush(Color.FromArgb(225, 255, 255, 255)),
+                            Padding = new Thickness(2, 1, 2, 1)
+                        };
+                        labelBorder.Child = new TextBlock
+                        {
+                            Text = item.StudentName,
+                            FontSize = Math.Max(8.5, 10.0 * (scale / 3.0)),
+                            FontWeight = FontWeights.Bold,
+                            Foreground = new SolidColorBrush(Color.FromRgb(25, 25, 25)),
+                            HorizontalAlignment = HorizontalAlignment.Center,
+                            TextTrimming = TextTrimming.CharacterEllipsis
+                        };
+                        containerGrid.Children.Add(labelBorder);
+                        cardBorder.Child = containerGrid;
+                    }
+                    else
+                    {
+                        cardBorder.Child = img;
+                    }
                 }
                 else if (!string.IsNullOrEmpty(item.ItemName) || !string.IsNullOrEmpty(item.CustomItemId))
                 {

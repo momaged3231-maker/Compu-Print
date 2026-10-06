@@ -19,7 +19,8 @@ namespace IdCardPrintShop.ViewModels
         IdCards = 0,
         PersonalPhotos = 1,
         GenericDocuments = 2,
-        CustomSize = 3
+        CustomSize = 3,
+        SchoolOrders = 4
     }
 
     public partial class MainViewModel : ObservableObject
@@ -47,6 +48,7 @@ namespace IdCardPrintShop.ViewModels
             OnPropertyChanged(nameof(IsPersonalPhotoMode));
             OnPropertyChanged(nameof(IsGenericDocumentsMode));
             OnPropertyChanged(nameof(IsCustomSizeMode));
+            OnPropertyChanged(nameof(IsSchoolOrdersMode));
         }
 
         [RelayCommand]
@@ -77,6 +79,14 @@ namespace IdCardPrintShop.ViewModels
         public void SwitchToCustomSize()
         {
             AppMode = ApplicationMode.CustomSize;
+            NotifyModeProperties();
+            UpdateLayoutPlan();
+        }
+
+        [RelayCommand]
+        public void SwitchToSchoolOrders()
+        {
+            AppMode = ApplicationMode.SchoolOrders;
             NotifyModeProperties();
             UpdateLayoutPlan();
         }
@@ -240,7 +250,8 @@ namespace IdCardPrintShop.ViewModels
             IJobPersistenceService jobService,
             IPersonalPhotoProcessor? photoProcessor = null,
             IDocumentInspectionService? docInspectionService = null,
-            IGenericDocumentExportService? genericExportService = null)
+            IGenericDocumentExportService? genericExportService = null,
+            ISchoolOrderEngine? schoolOrderEngine = null)
         {
             _imageService = imageService;
             _layoutEngine = layoutEngine;
@@ -248,6 +259,7 @@ namespace IdCardPrintShop.ViewModels
             _jobService = jobService;
             _docInspectionService = docInspectionService ?? new DocumentInspectionService();
             _genericExportService = genericExportService ?? new GenericDocumentExportService();
+            _schoolOrderEngine = schoolOrderEngine ?? new SchoolOrderEngine();
 
             var faceService = new OpenCvFaceDetectionService();
             var bgService = new SmartBackgroundRemovalService();
@@ -267,6 +279,8 @@ namespace IdCardPrintShop.ViewModels
                 PhotoProfiles.Add(p);
             }
             SelectedPhotoProfile = PhotoProfiles.FirstOrDefault();
+
+            InitializeSchoolOrders();
         }
 
         partial void OnAppModeChanged(ApplicationMode value)
@@ -913,6 +927,12 @@ namespace IdCardPrintShop.ViewModels
                 return;
             }
 
+            if (AppMode == ApplicationMode.SchoolOrders)
+            {
+                UpdateSchoolOrdersLayoutPlan();
+                return;
+            }
+
             if (Cards.Count == 0 || SelectedTemplate == null)
             {
                 CurrentPlan = null;
@@ -1286,6 +1306,12 @@ namespace IdCardPrintShop.ViewModels
             if (AppMode == ApplicationMode.CustomSize)
             {
                 await ExportCustomSizePdfAsync();
+                return;
+            }
+
+            if (AppMode == ApplicationMode.SchoolOrders)
+            {
+                await StartBatchProcessingAsync();
                 return;
             }
 

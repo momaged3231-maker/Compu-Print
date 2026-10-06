@@ -11,6 +11,11 @@ namespace IdCardPrintShop.Services
 {
     public class PdfSharpExportService : IPdfExportService
     {
+        static PdfSharpExportService()
+        {
+            WindowsFontResolver.EnsureRegistered();
+        }
+
         public Task<string> ExportPdfAsync(
             LayoutPlan plan,
             Dictionary<string, Mat> rectifiedCardMats,
@@ -117,6 +122,35 @@ namespace IdCardPrintShop.Services
                         if (plan.DrawBorderBox)
                         {
                             gfx.DrawRectangle(borderPen, xPt.Point, yPt.Point, wPt.Point, hPt.Point);
+                        }
+
+                        // Draw student name label if requested
+                        if (item.IncludeNameLabel && !string.IsNullOrWhiteSpace(item.StudentName))
+                        {
+                            try
+                            {
+                                double stripHeightMm = 4.2;
+                                var stripY = yPt.Point + hPt.Point - XUnit.FromMillimeter(stripHeightMm).Point;
+                                var stripH = XUnit.FromMillimeter(stripHeightMm).Point;
+
+                                var stripBrush = new XSolidBrush(XColor.FromArgb(235, 255, 255, 255));
+                                gfx.DrawRectangle(stripBrush, xPt.Point, stripY, wPt.Point, stripH);
+
+                                var font = new XFont("Arial", item.NameFontSizePt > 0 ? item.NameFontSizePt : 8.5, XFontStyleEx.Bold);
+                                var textBrush = new XSolidBrush(XColor.FromArgb(25, 25, 25));
+
+                                var format = new XStringFormat
+                                {
+                                    Alignment = XStringAlignment.Center,
+                                    LineAlignment = XLineAlignment.Center
+                                };
+
+                                gfx.DrawString(item.StudentName, font, textBrush, new XRect(xPt.Point, stripY, wPt.Point, stripH), format);
+                            }
+                            catch
+                            {
+                                // Defensive suppression: ensures font resolution issues never fail the batch
+                            }
                         }
 
                         // Draw professional cut marks (علامات القص) at each corner

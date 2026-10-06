@@ -35,6 +35,25 @@
 - تدوير تلقائي وتعديل يدوي بالماوس أو لوحة المفاتيح.
 - تصدير PDF بجودة طباعة فيزيائية 300 DPI مع علامات القص.
 
+### 5. باقات صور المدارس والطلبات الجماعية (School Orders & Student Packages)
+- سحب وإفلات أو اختيار مجلد يحتوي على مئات صور الطلاب بدفعة واحدة (Batch Processing).
+- فلترة ذكية للامتدادات المدعومة (`JPG`, `JPEG`, `PNG`, `WEBP`, `BMP`) مع استبعاد وتحذير من الملفات غير الصالحة.
+- استخراج وتطبيع أسماء الطلاب تلقائياً من أسماء الملفات مع إمكانية التعديل اليدوي في الجدول.
+- قوالب باقات معتمدة وجاهزة:
+  - **باقة 8 صور (4×6 سم)**
+  - **باقة 6 صور (4×6 سم)**
+  - **باقة 8 صور (3.5×4.5 سم)**
+  - **باقة 4 صور (5×7 سم)**
+  - **قالب باقة مخصص (Custom Dimensions & Quantities)**
+- شريط اسم الطالب (Student Name Label Strip) أسفل كل صورة مع خلفية عالية التباين وخيارات خطوط احترافية.
+- عزل كامل للأخطاء (Error Isolation): فشل صورة طالب تالفة لا يوقف معالجة باقي الدفعة.
+- مجلد مخرجات منظم لكل طلبية (`SchoolOrder_YYYY-MM-DD_XXX/`):
+  - مجلد `Input/` و `Processed/` (صور معالجة ومقصوصة بدقة 300 DPI).
+  - مجلد `Output/` (ملف PDF جامع للطلبية بالكامل + ملفات PDF فردية لكل طالب).
+  - مجلد `Reports/` (تقرير JSON تفصيلي + تقرير TXT نصي ملخص للطباعة).
+- بحث فوري، فلترة (الكل، جاهز، تحذير، خطأ، المحدد)، وترتيب (أبجدي A-Z، Z-A، أو الترتيب الأصلي).
+- إمكانية إعادة معالجة الطلاب الذين واجهوا أخطاء بنقرة زر واحدة (Reprocess Failed).
+
 ---
 
 ## 🛠️ التقنيات المستخدمة (Tech Stack)
@@ -42,8 +61,8 @@
 - **Framework**: .NET 10.0 (WPF) - C# 13
 - **Architecture**: MVVM (CommunityToolkit.Mvvm)
 - **Computer Vision & Image Processing**: OpenCvSharp4
-- **PDF Generation**: PDFsharp Core
-- **Testing**: xUnit with 57 comprehensive unit and integration tests
+- **PDF Generation**: PDFsharp Core مع WindowsFontResolver مخصص لحل الخطوط والطباعة الفيزيائية
+- **Testing**: xUnit with 64 comprehensive unit and integration tests (100% Pass)
 
 ---
 
