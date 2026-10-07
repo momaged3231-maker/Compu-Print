@@ -214,6 +214,9 @@ namespace IdCardPrintShop.Services
 
                 // Pass 5: High Luminance / Bright Card Mask (effective for white PVC cards and passports)
                 RunLuminancePass(procMat, candidates, scale, totalImageArea, width, height);
+
+                // Pass 6: Hand-held card detection (strong Canny + aggressive dilation + largest-contour MinAreaRect)
+                RunHandHeldPass(blurred, candidates, scale, totalImageArea, width, height);
             }
 
             // Filter duplicates / overlapping boxes using Non-Maximum Suppression and Nested Feature suppression
@@ -301,6 +304,85 @@ namespace IdCardPrintShop.Services
             ExtractQuadsFromBinary(closedBright, candidates, scale, totalImageArea, origW, origH, 0.88);
         }
 
+        /// <summary>
+        /// Pass 6: Specifically tuned for hand-held card photos.
+        /// Uses aggressive Canny thresholds + morphological close to merge gaps caused by fingers,
+        /// then uses MinAreaRect on the largest valid contour to get a rotated bounding box.
+        /// </summary>
+        private void RunHandHeldPass(Mat blurred, List<CandidateQuad> candidates, double scale, double totalImageArea, int origW, int origH)
+        {
+            // Strong Canny to isolate hard edges (card border vs fingers/background)
+            using var edges = new Mat();
+            Cv2.Canny(blurred, edges, 30, 100);
+
+            // Large kernel to bridge gaps where fingers break the card edge
+            using var kBig = Cv2.GetStructuringElement(MorphShapes.Rect, new Size(15, 15));
+            using var closed = new Mat();
+            Cv2.MorphologyEx(edges, closed, MorphTypes.Close, kBig, iterations: 3);
+            Cv2.Dilate(closed, closed, kBig, iterations: 1);
+
+            Cv2.FindContours(closed, out var contours, out _, RetrievalModes.External, ContourApproximationModes.ApproxSimple);
+            if (contours.Length == 0) return;
+
+            // Sort by area descending, try top 3 largest contours
+            var sorted = contours
+                .Select(c => new { c, area = Cv2.ContourArea(c) })
+                .Where(x => {
+                    double origArea = x.area / (scale * scale);
+                    double r = origArea / totalImageArea;
+                    return r >= 0.04 && r <= 0.90;
+                })
+                .OrderByDescending(x => x.area)
+                .Take(3);
+
+            foreach (var item in sorted)
+            {
+                var rotRect = Cv2.MinAreaRect(item.c);
+                var pts = rotRect.Points();
+                var quadCorners = pts.Select(p => new Point2D(p.X / scale, p.Y / scale)).ToArray();
+
+                for (int i = 0; i < 4; i++)
+                {
+                    quadCorners[i].X = Math.Clamp(quadCorners[i].X, 0, origW - 1);
+                    quadCorners[i].Y = Math.Clamp(quadCorners[i].Y, 0, origH - 1);
+                }
+
+                var sorted4 = SortCorners(quadCorners);
+
+                double w1 = sorted4[0].DistanceTo(sorted4[1]);
+                double w2 = sorted4[3].DistanceTo(sorted4[2]);
+                double h1 = sorted4[0].DistanceTo(sorted4[3]);
+                double h2 = sorted4[1].DistanceTo(sorted4[2]);
+                double avgW = (w1 + w2) / 2.0;
+                double avgH = (h1 + h2) / 2.0;
+
+                if (avgW < 30 || avgH < 30) continue;
+
+                double aspect = Math.Max(avgW, avgH) / Math.Min(avgW, avgH);
+                if (aspect < 1.10 || aspect > 2.60) continue;
+
+                var centroid = new Point2D(
+                    sorted4.Average(p => p.X),
+                    sorted4.Average(p => p.Y)
+                );
+
+                double diffId = Math.Abs(aspect - 1.585);
+                double diffPassport = Math.Abs(aspect - 1.420);
+                var docType = (diffPassport < diffId) ? CardDocumentType.Passport : CardDocumentType.NationalId;
+                double confidence = 0.72 * Math.Max(0.5, 1.0 - (Math.Min(diffId, diffPassport) * 0.3));
+
+                candidates.Add(new CandidateQuad
+                {
+                    Corners = sorted4,
+                    Centroid = centroid,
+                    Area = item.area / (scale * scale),
+                    AspectRatio = aspect,
+                    Confidence = Math.Clamp(confidence, 0.40, 0.88),
+                    DocumentType = docType
+                });
+            }
+        }
+
         private void ExtractQuadsFromBinary(Mat binaryMat, List<CandidateQuad> candidates, double scale, double totalImageArea, int origW, int origH, double baseConfidence)
         {
             Cv2.FindContours(binaryMat, out var contours, out _, RetrievalModes.List, ContourApproximationModes.ApproxSimple);
@@ -364,10 +446,9 @@ namespace IdCardPrintShop.Services
 
                 double aspect = Math.Max(avgWidth, avgHeight) / Math.Min(avgWidth, avgHeight);
 
-                // ID Card CR80: ~1.585
-                // Passport ID-3: ~1.420
-                // Valid document aspect ratios: 1.15 to 2.30
-                if (aspect < 1.15 || aspect > 2.30)
+                // ID Card CR80: ~1.585 | Passport ID-3: ~1.420
+                // Wider range to handle perspective distortion from camera angle (hand-held)
+                if (aspect < 1.10 || aspect > 2.60)
                 {
                     continue;
                 }

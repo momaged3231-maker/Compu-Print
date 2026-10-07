@@ -379,7 +379,11 @@ namespace IdCardPrintShop.ViewModels
 
             if (dlg.ShowDialog() == true && dlg.FileNames.Length > 0)
             {
-                await ProcessImportedFilesAsync(dlg.FileNames);
+                // Append if cards already exist (additive workflow)
+                if (Cards.Count > 0)
+                    await AppendImportedFilesAsync(dlg.FileNames);
+                else
+                    await ProcessImportedFilesAsync(dlg.FileNames);
             }
         }
 
@@ -580,6 +584,15 @@ namespace IdCardPrintShop.ViewModels
             Cards[1].SetRole(role0);
 
             UpdateLayoutPlan();
+        }
+
+        [RelayCommand]
+        public void ClearCards()
+        {
+            Cards.Clear();
+            HasCards = false;
+            DetectionNotice = string.Empty;
+            CurrentPlan = null!;
         }
 
         [RelayCommand]

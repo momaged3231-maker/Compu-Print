@@ -183,7 +183,11 @@ namespace IdCardPrintShop
 
                         if (imageFiles.Length > 0)
                         {
-                            await ViewModel.ProcessImportedFilesAsync(imageFiles);
+                            // Append if cards already exist, otherwise fresh import
+                            if (ViewModel.Cards.Count > 0)
+                                await ViewModel.AppendImportedFilesAsync(imageFiles);
+                            else
+                                await ViewModel.ProcessImportedFilesAsync(imageFiles);
                         }
                     }
                 }
