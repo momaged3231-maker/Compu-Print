@@ -383,27 +383,56 @@ namespace IdCardPrintShop.ViewModels
             }
         }
 
+        [RelayCommand]
+        public async Task ImportAdditionalImagesAsync()
+        {
+            var dlg = new OpenFileDialog
+            {
+                Title = "إضافة صور بطاقات أو مستندات إضافية",
+                Filter = "ملفات الصور|*.jpg;*.jpeg;*.png;*.bmp;*.webp|كل الملفات|*.*",
+                Multiselect = true
+            };
+
+            if (dlg.ShowDialog() == true && dlg.FileNames.Length > 0)
+            {
+                await AppendImportedFilesAsync(dlg.FileNames);
+            }
+        }
+
+        public async Task AppendImportedFilesAsync(string[] filePaths)
+        {
+            await ProcessImportedFilesInternalAsync(filePaths, append: true);
+        }
+
         public async Task ProcessImportedFilesAsync(string[] filePaths)
+        {
+            await ProcessImportedFilesInternalAsync(filePaths, append: false);
+        }
+
+        private async Task ProcessImportedFilesInternalAsync(string[] filePaths, bool append)
         {
             IsBusy = true;
             BusyMessage = "جاري فحص الصور واكتشاف حدود البطاقة تلقائياً...";
 
             try
             {
-                Cards.Clear();
+                if (!append)
+                {
+                    Cards.Clear();
+                }
+
                 var detectedRegions = new List<CardRegion>();
 
                 await Task.Run(() =>
                 {
                     if (filePaths.Length == 1)
                     {
-                        // 1 Image: might contain 1 card (Front only or Back only) OR both (Front + Back)
                         var result = _imageService.DetectCards(filePaths[0]);
 
                         if (!result.IsConfident)
                         {
                             IsNoticeWarning = true;
-                            DetectionNotice = result.Message; // Case D
+                            DetectionNotice = result.Message;
                         }
                         else
                         {
@@ -411,27 +440,97 @@ namespace IdCardPrintShop.ViewModels
                             DetectionNotice = result.Message;
                         }
 
+                        // If appending to an existing single front card, suggest Back role
+                        if (append && Cards.Count == 1 && result.DetectedCards.Count == 1)
+                        {
+                            var c = result.DetectedCards[0];
+                            c.Role = CardRole.Back;
+                            c.Label = "الظهر (Back)";
+                        }
+
                         detectedRegions.AddRange(result.DetectedCards);
                     }
-                    else
+                    else if (filePaths.Length == 2)
                     {
-                        // 2 or more separate images (e.g. front.jpg and back.jpg)
                         IsNoticeWarning = false;
-                        DetectionNotice = "تم استيراد صورتين منفصلتين (الوجه والظهر).";
+                        DetectionNotice = "تم استيراد صورتين (الوجه والظهر).";
 
                         for (int i = 0; i < filePaths.Length; i++)
                         {
                             var result = _imageService.DetectCards(filePaths[i]);
-                            var card = result.DetectedCards.FirstOrDefault() ?? new CardRegion
+                            if (result.DetectedCards.Count == 0)
                             {
-                                Id = $"Card_{i + 1}",
-                                SourceImagePath = filePaths[i],
-                                Corners = _imageService.GetFallbackCardCorners(result.ImageWidth, result.ImageHeight)
-                            };
+                                var fallbackCard = new CardRegion
+                                {
+                                    Id = $"Card_{Cards.Count + detectedRegions.Count + 1}",
+                                    SourceImagePath = filePaths[i],
+                                    Corners = _imageService.GetFallbackCardCorners(result.ImageWidth, result.ImageHeight),
+                                    Role = (i == 0) ? CardRole.Front : CardRole.Back,
+                                    Label = (i == 0) ? "الوجه (Front)" : "الظهر (Back)",
+                                    StatusMessage = "تحديد يدوي"
+                                };
+                                detectedRegions.Add(fallbackCard);
+                            }
+                            else
+                            {
+                                for (int k = 0; k < result.DetectedCards.Count; k++)
+                                {
+                                    var card = result.DetectedCards[k];
+                                    if (result.DetectedCards.Count == 1)
+                                    {
+                                        card.Role = (i == 0) ? CardRole.Front : CardRole.Back;
+                                        card.Label = (i == 0) ? "الوجه (Front)" : "الظهر (Back)";
+                                    }
+                                    detectedRegions.Add(card);
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // Multi-file batch (> 2 files)
+                        IsNoticeWarning = false;
 
-                            card.Role = (i == 0) ? CardRole.Front : CardRole.Back;
-                            card.Label = (i == 0) ? "الوجه (Front)" : "الظهر (Back)";
-                            detectedRegions.Add(card);
+                        for (int i = 0; i < filePaths.Length; i++)
+                        {
+                            var result = _imageService.DetectCards(filePaths[i]);
+                            if (result.DetectedCards.Count == 0)
+                            {
+                                var fallbackCard = new CardRegion
+                                {
+                                    Id = $"Card_{Cards.Count + detectedRegions.Count + 1}",
+                                    SourceImagePath = filePaths[i],
+                                    Corners = _imageService.GetFallbackCardCorners(result.ImageWidth, result.ImageHeight),
+                                    Label = $"مستند {Cards.Count + detectedRegions.Count + 1}",
+                                    StatusMessage = "تحديد يدوي"
+                                };
+                                detectedRegions.Add(fallbackCard);
+                            }
+                            else
+                            {
+                                foreach (var card in result.DetectedCards)
+                                {
+                                    detectedRegions.Add(card);
+                                }
+                            }
+                        }
+
+                        // If even number of files with 1 card each, pair as Front and Back:
+                        if (filePaths.Length % 2 == 0 && detectedRegions.Count == filePaths.Length)
+                        {
+                            for (int p = 0; p < detectedRegions.Count; p += 2)
+                            {
+                                int pairNum = (p / 2) + 1;
+                                detectedRegions[p].Role = CardRole.Front;
+                                detectedRegions[p].Label = $"بطاقة {pairNum} - الوجه";
+                                detectedRegions[p + 1].Role = CardRole.Back;
+                                detectedRegions[p + 1].Label = $"بطاقة {pairNum} - الظهر";
+                            }
+                            DetectionNotice = $"تم استيراد {filePaths.Length} ملفات واكتشاف {detectedRegions.Count} بطاقات بنجاح (مرتبة كأزواج وجه وظهر).";
+                        }
+                        else
+                        {
+                            DetectionNotice = $"تم استيراد {filePaths.Length} ملفات واكتشاف {detectedRegions.Count} بطاقات/مستندات بنجاح.";
                         }
                     }
                 });
@@ -444,6 +543,17 @@ namespace IdCardPrintShop.ViewModels
 
                 HasCards = Cards.Count > 0;
                 SelectedCard = Cards.FirstOrDefault();
+
+                // If any detected card is a passport, auto-select a passport template if not already selected
+                if (detectedRegions.Any(r => r.DocumentType == CardDocumentType.Passport) &&
+                    SelectedTemplate != null && !SelectedTemplate.Id.Contains("passport"))
+                {
+                    var passTemplate = Templates.FirstOrDefault(t => t.Id == "a4_passport_single");
+                    if (passTemplate != null)
+                    {
+                        SelectedTemplate = passTemplate;
+                    }
+                }
 
                 UpdateLayoutPlan();
             }

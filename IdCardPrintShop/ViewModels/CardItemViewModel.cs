@@ -38,6 +38,12 @@ namespace IdCardPrintShop.ViewModels
         [ObservableProperty]
         private double _confidence;
 
+        [ObservableProperty]
+        private CardDocumentType _documentType;
+
+        public bool IsPassport => DocumentType == CardDocumentType.Passport;
+        public bool IsNationalId => DocumentType == CardDocumentType.NationalId;
+
         public CardItemViewModel(CardRegion region, IImageProcessingService imageService)
         {
             Region = region;
@@ -45,6 +51,7 @@ namespace IdCardPrintShop.ViewModels
 
             DisplayLabel = region.Label;
             Role = region.Role;
+            DocumentType = region.DocumentType;
             StatusMessage = region.StatusMessage;
             IsManualAdjusted = region.IsManualAdjusted;
             RotationQuarterTurns = region.RotationQuarterTurns;
@@ -100,6 +107,35 @@ namespace IdCardPrintShop.ViewModels
                 _ => Region.Label
             };
             Region.Label = DisplayLabel;
+        }
+
+        [RelayCommand]
+        public void SetDocumentType(CardDocumentType newType)
+        {
+            DocumentType = newType;
+            Region.DocumentType = newType;
+            OnPropertyChanged(nameof(IsPassport));
+            OnPropertyChanged(nameof(IsNationalId));
+            if (newType == CardDocumentType.Passport && !DisplayLabel.Contains("جواز"))
+            {
+                DisplayLabel = "جواز سفر";
+                Region.Label = DisplayLabel;
+            }
+            else if (newType == CardDocumentType.NationalId && DisplayLabel.Contains("جواز"))
+            {
+                DisplayLabel = "بطاقة هوية";
+                Region.Label = DisplayLabel;
+            }
+            RefreshRectifiedPreview();
+        }
+
+        [RelayCommand]
+        public void ToggleDocumentType()
+        {
+            var nextType = DocumentType == CardDocumentType.NationalId
+                ? CardDocumentType.Passport
+                : CardDocumentType.NationalId;
+            SetDocumentType(nextType);
         }
     }
 }

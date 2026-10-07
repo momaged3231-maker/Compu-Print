@@ -105,12 +105,19 @@
                     <StackPanel Orientation="Vertical">
                         
                         <!-- Real-time Rectified Card Preview -->
-                        <TextBlock Text="معاينة البطاقة بعد تصحيح المنظور:" FontWeight="Bold" FontSize="13" Foreground="#c5d0e0" Margin="0,0,0,8" />
+                        <TextBlock Text="معاينة المستند بعد تصحيح المنظور:" FontWeight="Bold" FontSize="13" Foreground="#c5d0e0" Margin="0,0,0,8" />
                         <Border Background="#0d0f14" CornerRadius="6" BorderBrush="#343d52" BorderThickness="1" Height="190" Margin="0,0,0,14" ClipToBounds="True">
                             <Image Source="{Binding LiveRectifiedPreview}"
                                    Stretch="Uniform"
                                    RenderOptions.BitmapScalingMode="HighQuality" />
                         </Border>
+
+                        <!-- Document Type Preset Buttons (National ID vs Passport) -->
+                        <TextBlock Text="نوع المستند ونسبة الأبعاد:" FontWeight="Bold" FontSize="13" Foreground="#c5d0e0" Margin="0,0,0,8" />
+                        <UniformGrid Columns="2" Margin="0,0,0,12">
+                            <Button Command="{Binding ApplyNationalIdPresetCommand}" Margin="2" Content="💳 بطاقة هوية (CR80)" ToolTip="تطبيق أبعاد البطاقة القياسية 85.6 × 54 مم" />
+                            <Button Command="{Binding ApplyPassportPresetCommand}" Margin="2" Content="🛂 جواز سفر (ID-3)" ToolTip="تطبيق أبعاد جواز السفر 125 × 88 مم" />
+                        </UniformGrid>
 
                         <!-- Fast Rotation Tools -->
                         <TextBlock Text="الاتجاه والتدوير السريع:" FontWeight="Bold" FontSize="13" Foreground="#c5d0e0" Margin="0,0,0,8" />

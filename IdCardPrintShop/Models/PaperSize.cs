@@ -67,6 +67,7 @@ namespace IdCardPrintShop.Models
         }
 
         public static readonly CardDimensions StandardIdCard = new("بطاقة هوية قياسية (85.6 × 54 mm)", 85.60, 54.00);
+        public static readonly CardDimensions PassportDocument = new("جواز سفر - صفحة البيانات (125 × 88 mm)", 125.00, 88.00);
         public static readonly CardDimensions PersonalPhoto4x6 = new("صورة شخصية (40 × 60 mm)", 40.00, 60.00);
         public static readonly CardDimensions PassportPhoto = new("صورة جواز سفر (35 × 45 mm)", 35.00, 45.00);
         public static readonly CardDimensions BusinessCard = new("كارت شخصي (90 × 50 mm)", 90.00, 50.00);
@@ -74,6 +75,7 @@ namespace IdCardPrintShop.Models
         public static List<CardDimensions> AllStandardDimensions => new()
         {
             StandardIdCard,
+            PassportDocument,
             PersonalPhoto4x6,
             PassportPhoto,
             BusinessCard

@@ -89,16 +89,19 @@ namespace IdCardPrintShop.Services
             {
                 result.Case = DetectionCase.SingleCard;
                 result.IsConfident = true;
-                result.Message = "تم اكتشاف بطاقة واحدة بنجاح.";
+                var q = sortedQuads[0];
+                string label = q.DocumentType == CardDocumentType.Passport ? "جواز سفر" : "بطاقة 1";
+                result.Message = $"تم اكتشاف {label} بنجاح.";
 
                 result.DetectedCards.Add(new CardRegion
                 {
                     Id = "Card_1",
-                    Label = "بطاقة 1",
+                    Label = label,
                     Role = CardRole.Front,
+                    DocumentType = q.DocumentType,
                     SourceImagePath = sourceImagePath,
-                    Corners = sortedQuads[0].Corners,
-                    Confidence = sortedQuads[0].Confidence,
+                    Corners = q.Corners,
+                    Confidence = q.Confidence,
                     StatusMessage = "تم الاكتشاف التلقائي"
                 });
             }
@@ -106,29 +109,30 @@ namespace IdCardPrintShop.Services
             {
                 result.Case = DetectionCase.TwoCards;
                 result.IsConfident = true;
-                result.Message = "تم اكتشاف بطاقتين (وجه وظهر محتملان).";
+                result.Message = "تم اكتشاف وجه وظهر البطاقة بنجاح في نفس الصورة.";
 
-                // Provide temporary identity Card A & Card B
                 result.DetectedCards.Add(new CardRegion
                 {
                     Id = "Card_1",
-                    Label = "بطاقة أ (الوجه المقترح)",
+                    Label = "الوجه (Front)",
                     Role = CardRole.Front,
+                    DocumentType = sortedQuads[0].DocumentType,
                     SourceImagePath = sourceImagePath,
                     Corners = sortedQuads[0].Corners,
                     Confidence = sortedQuads[0].Confidence,
-                    StatusMessage = "تم الاكتشاف التلقائي (أ)"
+                    StatusMessage = "تم الاكتشاف التلقائي (الوجه)"
                 });
 
                 result.DetectedCards.Add(new CardRegion
                 {
                     Id = "Card_2",
-                    Label = "بطاقة ب (الظهر المقترح)",
+                    Label = "الظهر (Back)",
                     Role = CardRole.Back,
+                    DocumentType = sortedQuads[1].DocumentType,
                     SourceImagePath = sourceImagePath,
                     Corners = sortedQuads[1].Corners,
                     Confidence = sortedQuads[1].Confidence,
-                    StatusMessage = "تم الاكتشاف التلقائي (ب)"
+                    StatusMessage = "تم الاكتشاف التلقائي (الظهر)"
                 });
             }
             else
@@ -139,14 +143,16 @@ namespace IdCardPrintShop.Services
 
                 for (int i = 0; i < sortedQuads.Count; i++)
                 {
+                    var q = sortedQuads[i];
                     result.DetectedCards.Add(new CardRegion
                     {
                         Id = $"Card_{i + 1}",
-                        Label = $"بطاقة {i + 1}",
-                        Role = (i == 0) ? CardRole.Front : (i == 1 ? CardRole.Back : CardRole.Unknown),
+                        Label = q.DocumentType == CardDocumentType.Passport ? $"جواز سفر {i + 1}" : $"بطاقة {i + 1}",
+                        Role = (i == 0) ? CardRole.Front : (i == 1 ? CardRole.Back : CardRole.Single),
+                        DocumentType = q.DocumentType,
                         SourceImagePath = sourceImagePath,
-                        Corners = sortedQuads[i].Corners,
-                        Confidence = sortedQuads[i].Confidence,
+                        Corners = q.Corners,
+                        Confidence = q.Confidence,
                         StatusMessage = $"تم الاكتشاف التلقائي ({i + 1})"
                     });
                 }
@@ -162,6 +168,7 @@ namespace IdCardPrintShop.Services
             public double Area { get; set; }
             public double AspectRatio { get; set; }
             public double Confidence { get; set; }
+            public CardDocumentType DocumentType { get; set; } = CardDocumentType.NationalId;
         }
 
         private List<CandidateQuad> FindCardQuadrilaterals(Mat sourceMat)
@@ -169,7 +176,7 @@ namespace IdCardPrintShop.Services
             var candidates = new List<CandidateQuad>();
             int width = sourceMat.Width;
             int height = sourceMat.Height;
-            double totalImageArea = width * height;
+            double totalImageArea = (double)width * height;
 
             // Downscale for speed and noise reduction if image is very large
             double scale = 1.0;
@@ -201,9 +208,15 @@ namespace IdCardPrintShop.Services
 
                 // Pass 3: Canny Edge Detection with morphological closing
                 RunCannyPass(blurred, candidates, scale, totalImageArea, width, height);
+
+                // Pass 4: Multi-Channel Bilateral + Canny (effective for fabric, textured backgrounds, hands)
+                RunMultiChannelPass(procMat, candidates, scale, totalImageArea, width, height);
+
+                // Pass 5: High Luminance / Bright Card Mask (effective for white PVC cards and passports)
+                RunLuminancePass(procMat, candidates, scale, totalImageArea, width, height);
             }
 
-            // Filter duplicates / overlapping boxes using Non-Maximum Suppression (IoU)
+            // Filter duplicates / overlapping boxes using Non-Maximum Suppression and Nested Feature suppression
             return FilterOverlappingQuads(candidates, width, height);
         }
 
@@ -238,6 +251,56 @@ namespace IdCardPrintShop.Services
             ExtractQuadsFromBinary(dilated, candidates, scale, totalImageArea, origW, origH, 0.90);
         }
 
+        private void RunMultiChannelPass(Mat procMat, List<CandidateQuad> candidates, double scale, double totalImageArea, int origW, int origH)
+        {
+            Mat[] channels = Cv2.Split(procMat);
+            using var bB = new Mat();
+            using var bG = new Mat();
+            using var bR = new Mat();
+            using var edgeB = new Mat();
+            using var edgeG = new Mat();
+            using var edgeR = new Mat();
+            using var combinedEdges = new Mat();
+
+            Cv2.BilateralFilter(channels[0], bB, 9, 75, 75);
+            Cv2.BilateralFilter(channels[1], bG, 9, 75, 75);
+            Cv2.BilateralFilter(channels[2], bR, 9, 75, 75);
+
+            Cv2.Canny(bB, edgeB, 40, 120);
+            Cv2.Canny(bG, edgeG, 40, 120);
+            Cv2.Canny(bR, edgeR, 40, 120);
+
+            Cv2.BitwiseOr(edgeB, edgeG, combinedEdges);
+            Cv2.BitwiseOr(combinedEdges, edgeR, combinedEdges);
+
+            using var k9 = Cv2.GetStructuringElement(MorphShapes.Rect, new Size(9, 9));
+            using var closedEdges = new Mat();
+            Cv2.MorphologyEx(combinedEdges, closedEdges, MorphTypes.Close, k9, iterations: 2);
+
+            ExtractQuadsFromBinary(closedEdges, candidates, scale, totalImageArea, origW, origH, 0.92);
+
+            foreach (var ch in channels) ch.Dispose();
+        }
+
+        private void RunLuminancePass(Mat procMat, List<CandidateQuad> candidates, double scale, double totalImageArea, int origW, int origH)
+        {
+            using var lab = new Mat();
+            Cv2.CvtColor(procMat, lab, ColorConversionCodes.BGR2Lab);
+            Mat[] channels = Cv2.Split(lab);
+            using var lChan = channels[0];
+            channels[1].Dispose();
+            channels[2].Dispose();
+
+            using var brightMask = new Mat();
+            Cv2.Threshold(lChan, brightMask, 165, 255, ThresholdTypes.Binary);
+
+            using var k9 = Cv2.GetStructuringElement(MorphShapes.Rect, new Size(9, 9));
+            using var closedBright = new Mat();
+            Cv2.MorphologyEx(brightMask, closedBright, MorphTypes.Close, k9, iterations: 2);
+
+            ExtractQuadsFromBinary(closedBright, candidates, scale, totalImageArea, origW, origH, 0.88);
+        }
+
         private void ExtractQuadsFromBinary(Mat binaryMat, List<CandidateQuad> candidates, double scale, double totalImageArea, int origW, int origH, double baseConfidence)
         {
             Cv2.FindContours(binaryMat, out var contours, out _, RetrievalModes.List, ContourApproximationModes.ApproxSimple);
@@ -247,9 +310,9 @@ namespace IdCardPrintShop.Services
                 var area = Cv2.ContourArea(contour);
                 double originalArea = area / (scale * scale);
 
-                // Filter by area: card should be between 2% and 94% of total image area
+                // Filter by area: card should be between 2% and 88% of total image area
                 double areaRatio = originalArea / totalImageArea;
-                if (areaRatio < 0.02 || areaRatio > 0.94)
+                if (areaRatio < 0.02 || areaRatio > 0.88)
                 {
                     continue;
                 }
@@ -261,13 +324,10 @@ namespace IdCardPrintShop.Services
 
                 if (approx.Length == 4 && Cv2.IsContourConvex(approx))
                 {
-                    // 4 vertices found
                     quadCorners = approx.Select(p => new Point2D(p.X / scale, p.Y / scale)).ToArray();
                 }
                 else if (approx.Length >= 4 && approx.Length <= 10)
                 {
-                    // Many cards have slightly rounded corners leading to 5-8 vertices.
-                    // MinAreaRect gives a tight bounding oriented rectangle.
                     var rotRect = Cv2.MinAreaRect(contour);
                     var pts = rotRect.Points();
                     quadCorners = pts.Select(p => new Point2D(p.X / scale, p.Y / scale)).ToArray();
@@ -297,16 +357,17 @@ namespace IdCardPrintShop.Services
                 double avgWidth = (widthTop + widthBottom) / 2.0;
                 double avgHeight = (heightLeft + heightRight) / 2.0;
 
-                if (avgWidth < 20 || avgHeight < 20)
+                if (avgWidth < 30 || avgHeight < 30)
                 {
                     continue;
                 }
 
                 double aspect = Math.Max(avgWidth, avgHeight) / Math.Min(avgWidth, avgHeight);
 
-                // ID Card CR80 aspect ratio is 85.6 / 54.0 = ~1.585
-                // Passports and other ID formats range 1.15 to 2.2
-                if (aspect < 1.10 || aspect > 2.30)
+                // ID Card CR80: ~1.585
+                // Passport ID-3: ~1.420
+                // Valid document aspect ratios: 1.15 to 2.30
+                if (aspect < 1.15 || aspect > 2.30)
                 {
                     continue;
                 }
@@ -317,9 +378,13 @@ namespace IdCardPrintShop.Services
                     sortedCorners.Average(p => p.Y)
                 );
 
-                // Confidence heuristic: proximity to 1.585 aspect ratio and reasonable area
-                double aspectDiff = Math.Abs(aspect - 1.585);
-                double confidence = baseConfidence * Math.Max(0.5, 1.0 - (aspectDiff * 0.3));
+                // Confidence based on distance to standard ID (1.585) or Passport (1.420)
+                double diffId = Math.Abs(aspect - 1.585);
+                double diffPassport = Math.Abs(aspect - 1.420);
+                double minAspectDiff = Math.Min(diffId, diffPassport);
+
+                var docType = (diffPassport < diffId) ? CardDocumentType.Passport : CardDocumentType.NationalId;
+                double confidence = baseConfidence * Math.Max(0.55, 1.0 - (minAspectDiff * 0.28));
 
                 candidates.Add(new CandidateQuad
                 {
@@ -327,7 +392,8 @@ namespace IdCardPrintShop.Services
                     Centroid = centroid,
                     Area = originalArea,
                     AspectRatio = aspect,
-                    Confidence = Math.Clamp(confidence, 0.4, 0.98)
+                    Confidence = Math.Clamp(confidence, 0.4, 0.98),
+                    DocumentType = docType
                 });
             }
         }
@@ -339,10 +405,6 @@ namespace IdCardPrintShop.Services
                 throw new ArgumentException("Must provide exactly 4 points to sort corners.", nameof(pts));
             }
 
-            // Top-Left: smallest (x + y)
-            // Bottom-Right: largest (x + y)
-            // Top-Right: smallest (y - x) [i.e. largest (x - y)]
-            // Bottom-Left: largest (y - x) [i.e. smallest (x - y)]
             var sortedBySum = pts.OrderBy(p => p.X + p.Y).ToList();
             var tl = sortedBySum.First();
             var br = sortedBySum.Last();
@@ -350,12 +412,10 @@ namespace IdCardPrintShop.Services
             var remaining = pts.Where(p => !p.Equals(tl) && !p.Equals(br)).ToList();
             if (remaining.Count != 2)
             {
-                // Fallback by X coordinate
                 remaining = pts.OrderBy(p => p.X).ToList();
                 return new[] { remaining[0], remaining[1], remaining[3], remaining[2] };
             }
 
-            // Between remaining two, Top-Right has smaller Y (higher on screen) or larger X
             Point2D tr, bl;
             if (remaining[0].X > remaining[1].X)
             {
@@ -373,26 +433,104 @@ namespace IdCardPrintShop.Services
 
         private List<CandidateQuad> FilterOverlappingQuads(List<CandidateQuad> candidates, int imageW, int imageH)
         {
+            var filtered = new List<CandidateQuad>();
+            double totalArea = (double)imageW * imageH;
+
+            // 1. Remove background border frames that cover > 85% and touch image edges
+            foreach (var cand in candidates)
+            {
+                double minX = cand.Corners.Min(p => p.X);
+                double maxX = cand.Corners.Max(p => p.X);
+                double minY = cand.Corners.Min(p => p.Y);
+                double maxY = cand.Corners.Max(p => p.Y);
+
+                double w = maxX - minX;
+                double h = maxY - minY;
+                double areaRatio = (w * h) / totalArea;
+
+                bool touchesEdges = (minX < 0.03 * imageW && minY < 0.03 * imageH &&
+                                     maxX > 0.97 * imageW && maxY > 0.97 * imageH);
+
+                if (areaRatio > 0.85 && touchesEdges)
+                {
+                    continue; // Skip image outer boundary
+                }
+
+                filtered.Add(cand);
+            }
+
+            // 2. Sort by bounding box Area descending to suppress internal features (nested elements like face photo, stamps)
+            var sorted = filtered.OrderByDescending(c => {
+                double w = c.Corners.Max(p => p.X) - c.Corners.Min(p => p.X);
+                double h = c.Corners.Max(p => p.Y) - c.Corners.Min(p => p.Y);
+                return w * h;
+            }).ToList();
             var result = new List<CandidateQuad>();
-            var sorted = candidates.OrderByDescending(c => c.Area).ToList();
 
             foreach (var cand in sorted)
             {
-                bool isDuplicate = false;
+                double candMinX = cand.Corners.Min(p => p.X);
+                double candMaxX = cand.Corners.Max(p => p.X);
+                double candMinY = cand.Corners.Min(p => p.Y);
+                double candMaxY = cand.Corners.Max(p => p.Y);
+                double candArea = (candMaxX - candMinX) * (candMaxY - candMinY);
+
+                bool isDuplicateOrNested = false;
+
                 foreach (var kept in result)
                 {
-                    // Check centroid distance
+                    double keptMinX = kept.Corners.Min(p => p.X);
+                    double keptMaxX = kept.Corners.Max(p => p.X);
+                    double keptMinY = kept.Corners.Min(p => p.Y);
+                    double keptMaxY = kept.Corners.Max(p => p.Y);
+                    double keptArea = (keptMaxX - keptMinX) * (keptMaxY - keptMinY);
+
+                    // Centroid containment test (if smaller quad's centroid is inside kept larger quad)
+                    if (candArea < keptArea * 0.60 &&
+                        cand.Centroid.X >= keptMinX && cand.Centroid.X <= keptMaxX &&
+                        cand.Centroid.Y >= keptMinY && cand.Centroid.Y <= keptMaxY)
+                    {
+                        isDuplicateOrNested = true;
+                        break;
+                    }
+
+                    // Bounding box intersection
+                    double interMinX = Math.Max(candMinX, keptMinX);
+                    double interMaxX = Math.Min(candMaxX, keptMaxX);
+                    double interMinY = Math.Max(candMinY, keptMinY);
+                    double interMaxY = Math.Min(candMaxY, keptMaxY);
+
+                    if (interMaxX > interMinX && interMaxY > interMinY)
+                    {
+                        double interArea = (interMaxX - interMinX) * (interMaxY - interMinY);
+
+                        // Nested test: If > 55% of candidate is inside an already-kept larger card
+                        if (candArea > 0 && (interArea / candArea) > 0.55)
+                        {
+                            isDuplicateOrNested = true;
+                            break;
+                        }
+
+                        // IoU overlap test
+                        double unionArea = candArea + keptArea - interArea;
+                        if (unionArea > 0 && (interArea / unionArea) > 0.38)
+                        {
+                            isDuplicateOrNested = true;
+                            break;
+                        }
+                    }
+
+                    // Centroid proximity test
                     double dist = cand.Centroid.DistanceTo(kept.Centroid);
                     double diag = Math.Sqrt(cand.Area);
-
-                    if (dist < diag * 0.4) // If centroids are very close, it's the same card detected twice
+                    if (dist < diag * 0.35)
                     {
-                        isDuplicate = true;
+                        isDuplicateOrNested = true;
                         break;
                     }
                 }
 
-                if (!isDuplicate)
+                if (!isDuplicateOrNested)
                 {
                     result.Add(cand);
                 }
@@ -426,20 +564,20 @@ namespace IdCardPrintShop.Services
             };
         }
 
-        public Mat WarpAndCorrectCard(string imagePath, CardRegion region, double? targetAspectRatio = 85.60 / 54.00)
+        public Mat WarpAndCorrectCard(string imagePath, CardRegion region, double? targetAspectRatio = null)
         {
             var mat = LoadMat(imagePath);
             return WarpAndCorrectCard(mat, region, targetAspectRatio);
         }
 
-        public Mat WarpAndCorrectCard(Mat sourceMat, CardRegion region, double? targetAspectRatio = 85.60 / 54.00)
+        public Mat WarpAndCorrectCard(Mat sourceMat, CardRegion region, double? targetAspectRatio = null)
         {
             if (region.Corners == null || region.Corners.Length != 4)
             {
                 throw new ArgumentException("يجب تحديد 4 أركان للبطاقة لإجراء التصحيح.", nameof(region));
             }
 
-            // Apply safety margin outward expansion (Section 7: safety margin داخلي صغير لمنع قص أطراف البطاقة)
+            // Apply safety margin outward expansion
             var expandedCorners = ApplySafetyMargin(region.Corners, region.SafetyMarginPercent, sourceMat.Width, sourceMat.Height);
 
             // Compute target rectified dimensions
@@ -456,9 +594,12 @@ namespace IdCardPrintShop.Services
             int targetW;
             int targetH;
 
-            if (targetAspectRatio.HasValue && targetAspectRatio.Value > 0)
+            double ratio = (targetAspectRatio.HasValue && targetAspectRatio.Value > 0)
+                ? targetAspectRatio.Value
+                : region.TargetAspectRatio;
+
+            if (ratio > 0)
             {
-                double ratio = targetAspectRatio.Value;
                 if (avgW >= avgH) // Landscape card
                 {
                     targetW = (int)Math.Round(maxW);

@@ -118,6 +118,33 @@ namespace IdCardPrintShop.Models
                     SpacingX_Mm = 8.0,
                     SpacingY_Mm = 10.0,
                     ShowCutMarks = true
+                },
+                new()
+                {
+                    Id = "a4_passport_single",
+                    Name = "A4 - جواز سفر (صفحة بيانات بالحجم الطبيعي)",
+                    Description = "طباعة صفحة بيانات جواز السفر بأبعادها الرسمية (125 × 88 مم) في منتصف صفحة A4",
+                    Mode = LayoutMode.GridCopies,
+                    PaperSize = PaperSize.A4,
+                    Orientation = PaperOrientation.Portrait,
+                    CardDimensions = CardDimensions.PassportDocument,
+                    MarginTopMm = 30.0,
+                    MarginLeftMm = 30.0,
+                    ShowCutMarks = true,
+                    DrawBorderBox = true
+                },
+                new()
+                {
+                    Id = "a4_passport_double",
+                    Name = "A4 - جوازا سفر (صفحتان في الورقة)",
+                    Description = "طباعة جوازي سفر بأبعادهما الرسمية (125 × 88 مم) في صفحة A4 واحدة",
+                    Mode = LayoutMode.GridCopies,
+                    PaperSize = PaperSize.A4,
+                    Orientation = PaperOrientation.Portrait,
+                    CardDimensions = CardDimensions.PassportDocument,
+                    SpacingY_Mm = 14.0,
+                    ShowCutMarks = true,
+                    DrawBorderBox = true
                 }
             };
         }

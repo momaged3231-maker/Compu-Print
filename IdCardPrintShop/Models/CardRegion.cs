@@ -17,6 +17,11 @@ namespace IdCardPrintShop.Models
         [JsonPropertyName("role")]
         public CardRole Role { get; set; } = CardRole.Unknown;
 
+        [JsonPropertyName("documentType")]
+        public CardDocumentType DocumentType { get; set; } = CardDocumentType.NationalId;
+
+        public double TargetAspectRatio => DocumentType.GetTargetAspectRatio();
+
         /// <summary>
         /// 4 corner points in source image pixel coordinates:
         /// [0]: Top-Left, [1]: Top-Right, [2]: Bottom-Right, [3]: Bottom-Left
@@ -55,6 +60,7 @@ namespace IdCardPrintShop.Models
                 Label = Label,
                 SourceImagePath = SourceImagePath,
                 Role = Role,
+                DocumentType = DocumentType,
                 Corners = clonedCorners,
                 RotationQuarterTurns = RotationQuarterTurns,
                 FineRotationDegrees = FineRotationDegrees,

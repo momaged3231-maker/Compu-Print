@@ -61,6 +61,12 @@ namespace IdCardPrintShop.ViewModels
         private CardRole _cardRole;
 
         [ObservableProperty]
+        private CardDocumentType _documentType;
+
+        public bool IsPassport => DocumentType == CardDocumentType.Passport;
+        public bool IsNationalId => DocumentType == CardDocumentType.NationalId;
+
+        [ObservableProperty]
         private string _statusMessage = "اسحب الدوائر الأربعة لتحديد أركان البطاقة بدقة.";
 
         public event Action? RequestClose;
@@ -77,6 +83,7 @@ namespace IdCardPrintShop.ViewModels
             FineRotationDegrees = r.FineRotationDegrees;
             SafetyMarginPercent = r.SafetyMarginPercent;
             CardRole = r.Role;
+            DocumentType = r.DocumentType;
 
             LoadSourceImage(r.SourceImagePath);
 
@@ -137,6 +144,7 @@ namespace IdCardPrintShop.ViewModels
                 var tempRegion = new CardRegion
                 {
                     SourceImagePath = _cardItemVm.Region.SourceImagePath,
+                    DocumentType = DocumentType,
                     Corners = new[]
                     {
                         new Point2D(Corner0X, Corner0Y),
@@ -236,6 +244,54 @@ namespace IdCardPrintShop.ViewModels
         }
 
         [RelayCommand]
+        public void SetDocumentType(CardDocumentType newType)
+        {
+            DocumentType = newType;
+            OnPropertyChanged(nameof(IsPassport));
+            OnPropertyChanged(nameof(IsNationalId));
+            UpdateLivePreview();
+        }
+
+        [RelayCommand]
+        public void ApplyNationalIdPreset()
+        {
+            SetDocumentType(CardDocumentType.NationalId);
+            ApplyPresetWithAspectRatio(85.60 / 54.00);
+        }
+
+        [RelayCommand]
+        public void ApplyPassportPreset()
+        {
+            SetDocumentType(CardDocumentType.Passport);
+            ApplyPresetWithAspectRatio(125.00 / 88.00);
+        }
+
+        private void ApplyPresetWithAspectRatio(double targetAspect)
+        {
+            double cardW = ImagePixelWidth * 0.70;
+            double cardH = cardW / targetAspect;
+            if (cardH > ImagePixelHeight * 0.75)
+            {
+                cardH = ImagePixelHeight * 0.70;
+                cardW = cardH * targetAspect;
+            }
+
+            double startX = (ImagePixelWidth - cardW) / 2.0;
+            double startY = (ImagePixelHeight - cardH) / 2.0;
+
+            Corner0X = startX;
+            Corner0Y = startY;
+            Corner1X = startX + cardW;
+            Corner1Y = startY;
+            Corner2X = startX + cardW;
+            Corner2Y = startY + cardH;
+            Corner3X = startX;
+            Corner3Y = startY + cardH;
+
+            UpdateLivePreview();
+        }
+
+        [RelayCommand]
         public void Apply()
         {
             var r = _cardItemVm.Region;
@@ -247,10 +303,12 @@ namespace IdCardPrintShop.ViewModels
             r.FineRotationDegrees = FineRotationDegrees;
             r.SafetyMarginPercent = SafetyMarginPercent;
             r.Role = CardRole;
+            r.DocumentType = DocumentType;
             r.IsManualAdjusted = true;
             r.StatusMessage = "تم التعديل اليدوي";
 
             _cardItemVm.SetRole(CardRole);
+            _cardItemVm.SetDocumentType(DocumentType);
             _cardItemVm.RotationQuarterTurns = RotationQuarterTurns;
             _cardItemVm.IsManualAdjusted = true;
             _cardItemVm.RefreshRectifiedPreview();

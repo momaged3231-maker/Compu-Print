@@ -343,5 +343,35 @@ namespace IdCardPrintShop.Tests
             Assert.Equal(2, loadedJob.DetectedCards[0].RotationQuarterTurns);
             Assert.Equal(10, loadedJob.DetectedCards[0].Corners[0].X);
         }
+        [Fact]
+        public void Test_SamplesDiagnostics()
+        {
+            var samplesDir = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, @"..\..\..\..\Samples"));
+            if (!Directory.Exists(samplesDir)) return;
+
+            var imageFiles = Directory.GetFiles(samplesDir, "*.*")
+                .Where(f => f.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase) || 
+                            f.EndsWith(".png", StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            var diagFile = Path.Combine(AppContext.BaseDirectory, "diag.txt");
+            // Test full samples with improved filtering simulation
+            var testLines = new List<string>();
+            foreach (var imgPath in imageFiles)
+            {
+                var fileName = Path.GetFileName(imgPath);
+                using var mat = _imageService.LoadMat(imgPath);
+                var result = _imageService.DetectCards(imgPath);
+                testLines.Add($"[DETECT_RESULT] {fileName} ({mat.Width}x{mat.Height}) => Case: {result.Case}, Conf: {result.IsConfident}, Count: {result.DetectedCards.Count}");
+                for (int i = 0; i < result.DetectedCards.Count; i++)
+                {
+                    var c = result.DetectedCards[i];
+                    double w = c.Corners.Max(p => p.X) - c.Corners.Min(p => p.X);
+                    double h = c.Corners.Max(p => p.Y) - c.Corners.Min(p => p.Y);
+                    testLines.Add($"   Card {i + 1} ({c.Role}, {c.DocumentType}): aspect {(w/h):F2}, conf: {c.Confidence:F2}, rect [{c.Corners.Min(p=>p.X):F0},{c.Corners.Min(p=>p.Y):F0},{w:F0},{h:F0}], label: {c.Label}");
+                }
+            }
+            File.WriteAllLines(diagFile, testLines);
+        }
     }
 }

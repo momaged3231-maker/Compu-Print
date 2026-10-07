@@ -28,8 +28,8 @@ namespace IdCardPrintShop.Services
     {
         DetectionResult DetectCards(string imagePath);
         DetectionResult DetectCards(Mat sourceMat, string sourceImagePath = "");
-        Mat WarpAndCorrectCard(string imagePath, CardRegion region, double? targetAspectRatio = 85.60 / 54.00);
-        Mat WarpAndCorrectCard(Mat sourceMat, CardRegion region, double? targetAspectRatio = 85.60 / 54.00);
+        Mat WarpAndCorrectCard(string imagePath, CardRegion region, double? targetAspectRatio = null);
+        Mat WarpAndCorrectCard(Mat sourceMat, CardRegion region, double? targetAspectRatio = null);
         BitmapSource MatToBitmapSource(Mat mat);
         byte[] MatToPngBytes(Mat mat);
         Mat LoadMat(string imagePath);
