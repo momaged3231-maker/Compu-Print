@@ -156,9 +156,35 @@
                             <Button Command="{Binding SetAsBackCommand}" Content="الظهر (Back)" Margin="2" />
                         </UniformGrid>
 
-                        <!-- Detection & Reset Tools -->
+                        <!-- Auto Crop + Detection & Reset Tools -->
                         <TextBlock Text="إعادة الضبط:" FontWeight="Bold" FontSize="13" Foreground="#c5d0e0" Margin="0,4,0,8" />
                         <StackPanel Orientation="Vertical">
+                            <!-- AUTO CROP: Remove outer background automatically -->
+                            <Button Command="{Binding AutoCropBackgroundCommand}"
+                                    Margin="0,0,0,6" Padding="12,10"
+                                    ToolTip="يكتشف حدود البطاقة ويشيل الخلفية والأصابع تلقائياً">
+                                <Button.Style>
+                                    <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                                        <Setter Property="Background" Value="#0a3a1f" />
+                                        <Setter Property="BorderBrush" Value="#00c853" />
+                                        <Setter Property="BorderThickness" Value="1.5" />
+                                        <Style.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter Property="Background" Value="#0e5229" />
+                                                <Setter Property="BorderBrush" Value="#69f0ae" />
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Button.Style>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="✂️" FontSize="16" Margin="0,0,8,0" VerticalAlignment="Center" />
+                                    <StackPanel Orientation="Vertical">
+                                        <TextBlock Text="قص الخلفية تلقائياً" FontWeight="Bold" FontSize="13" Foreground="#00e676" />
+                                        <TextBlock Text="يزيل الخلفية / الأصابع برا البطاقة" FontSize="11" Foreground="#6fcf97" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </Button>
+
                             <Button Command="{Binding AutoDetectAgainCommand}" Content="🎯 إعادة الاكتشاف التلقائي" Margin="0,2,0,4" />
                             <Button Command="{Binding ResetCornersCommand}" Content="↩️ استعادة الأركان السابقة" Margin="0,2,0,4" />
                         </StackPanel>

@@ -231,6 +231,168 @@ namespace IdCardPrintShop.ViewModels
             }
         }
 
+        /// <summary>
+        /// Automatically detects the card/document boundary and removes surrounding
+        /// background (hands, white borders, shadows). Uses a 3-pass OpenCV pipeline:
+        /// Adaptive thresh → Canny+dilate → Otsu, picks the best MinAreaRect.
+        /// </summary>
+        [RelayCommand]
+        public void AutoCropBackground()
+        {
+            try
+            {
+                StatusMessage = "جاري اكتشاف حدود البطاقة تلقائياً...";
+
+                using var src = _imageService.LoadMat(_cardItemVm.Region.SourceImagePath);
+                if (src == null || src.Empty())
+                {
+                    StatusMessage = "تعذر تحميل الصورة.";
+                    return;
+                }
+
+                int origW = src.Width;
+                int origH = src.Height;
+                double totalArea = origW * origH;
+
+                // Work on a downscaled copy for speed
+                double scale = Math.Min(1.0, 1200.0 / Math.Max(origW, origH));
+                using var small = new Mat();
+                Cv2.Resize(src, small, new Size((int)(origW * scale), (int)(origH * scale)));
+
+                using var gray = new Mat();
+                Cv2.CvtColor(small, gray, ColorConversionCodes.BGR2GRAY);
+
+                using var blurred = new Mat();
+                Cv2.GaussianBlur(gray, blurred, new Size(5, 5), 0);
+
+                var bestQuad = TryFindCardRect(blurred, scale, origW, origH, totalArea);
+
+                if (bestQuad != null)
+                {
+                    Corner0X = bestQuad[0].X;
+                    Corner0Y = bestQuad[0].Y;
+                    Corner1X = bestQuad[1].X;
+                    Corner1Y = bestQuad[1].Y;
+                    Corner2X = bestQuad[2].X;
+                    Corner2Y = bestQuad[2].Y;
+                    Corner3X = bestQuad[3].X;
+                    Corner3Y = bestQuad[3].Y;
+                    UpdateLivePreview();
+                    StatusMessage = "✅ تم قص الخلفية تلقائياً — إذا لم يكن دقيقاً اضبط يدوياً.";
+                }
+                else
+                {
+                    StatusMessage = "⚠️ لم يتم العثور على حدود واضحة — جرب التعديل اليدوي.";
+                }
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"خطأ في القص: {ex.Message}";
+            }
+        }
+
+        private static Point2D[]? TryFindCardRect(Mat blurred, double scale, int origW, int origH, double totalArea)
+        {
+            // 3 passes: adaptive, canny+dilate, otsu — return first best result
+            var passes = new Func<Mat>[]
+            {
+                // Pass A: Adaptive threshold (handles uneven lighting / shadows from hands)
+                () => {
+                    using var adapt = new Mat();
+                    Cv2.AdaptiveThreshold(blurred, adapt, 255,
+                        AdaptiveThresholdTypes.GaussianC, ThresholdTypes.Binary, 19, 4);
+                    using var k7 = Cv2.GetStructuringElement(MorphShapes.Rect, new Size(7, 7));
+                    var closed = new Mat();
+                    Cv2.MorphologyEx(adapt, closed, MorphTypes.Close, k7, iterations: 2);
+                    return closed;
+                },
+                // Pass B: Canny + aggressive dilation (great for hand-held)
+                () => {
+                    using var edges = new Mat();
+                    Cv2.Canny(blurred, edges, 25, 90);
+                    using var k13 = Cv2.GetStructuringElement(MorphShapes.Rect, new Size(13, 13));
+                    var closed = new Mat();
+                    Cv2.MorphologyEx(edges, closed, MorphTypes.Close, k13, iterations: 3);
+                    Cv2.Dilate(closed, closed, k13);
+                    return closed;
+                },
+                // Pass C: Otsu global threshold (flat white/light card on dark background)
+                () => {
+                    var otsu = new Mat();
+                    Cv2.Threshold(blurred, otsu, 0, 255, ThresholdTypes.Binary | ThresholdTypes.Otsu);
+                    using var k9 = Cv2.GetStructuringElement(MorphShapes.Rect, new Size(9, 9));
+                    Cv2.MorphologyEx(otsu, otsu, MorphTypes.Close, k9, iterations: 2);
+                    return otsu;
+                }
+            };
+
+            Point2D[]? best = null;
+            double bestScore = 0;
+
+            foreach (var passFunc in passes)
+            {
+                using var binary = passFunc();
+                Cv2.FindContours(binary, out var contours, out _,
+                    RetrievalModes.External, ContourApproximationModes.ApproxSimple);
+
+                foreach (var contour in contours)
+                {
+                    double area = Cv2.ContourArea(contour) / (scale * scale);
+                    double ratio = area / totalArea;
+                    if (ratio < 0.04 || ratio > 0.92) continue;
+
+                    var rr = Cv2.MinAreaRect(contour);
+                    var pts = rr.Points();
+                    var quad = pts.Select(p => new Point2D(
+                        Math.Clamp(p.X / scale, 0, origW - 1),
+                        Math.Clamp(p.Y / scale, 0, origH - 1)
+                    )).ToArray();
+
+                    // Sort: TL, TR, BR, BL
+                    quad = SortCornersStatic(quad);
+
+                    double w1 = quad[0].DistanceTo(quad[1]);
+                    double w2 = quad[3].DistanceTo(quad[2]);
+                    double h1 = quad[0].DistanceTo(quad[3]);
+                    double h2 = quad[1].DistanceTo(quad[2]);
+                    double avgW = (w1 + w2) / 2.0;
+                    double avgH = (h1 + h2) / 2.0;
+                    if (avgW < 40 || avgH < 40) continue;
+
+                    double aspect = Math.Max(avgW, avgH) / Math.Min(avgW, avgH);
+                    if (aspect < 1.05 || aspect > 3.0) continue;
+
+                    // Score: prefer aspect ratios close to standard cards (1.585 / 1.420)
+                    double diffId = Math.Abs(aspect - 1.585);
+                    double diffPp = Math.Abs(aspect - 1.420);
+                    double aspScore = Math.Max(0.3, 1.0 - Math.Min(diffId, diffPp) * 0.5);
+                    // Reward larger area
+                    double score = ratio * aspScore;
+
+                    if (score > bestScore)
+                    {
+                        bestScore = score;
+                        best = quad;
+                    }
+                }
+            }
+
+            return best;
+        }
+
+        private static Point2D[] SortCornersStatic(Point2D[] pts)
+        {
+            // TL = min(x+y), BR = max(x+y), TR = min(y-x), BL = max(y-x)
+            var sorted = pts.OrderBy(p => p.X + p.Y).ToArray();
+            var tl = sorted[0];
+            var br = sorted[3];
+            var mid1 = sorted[1];
+            var mid2 = sorted[2];
+            var tr = mid1.Y < mid2.Y ? mid1 : mid2;
+            var bl = mid1.Y < mid2.Y ? mid2 : mid1;
+            return new[] { tl, tr, br, bl };
+        }
+
         [RelayCommand]
         public void SetAsFront()
         {
