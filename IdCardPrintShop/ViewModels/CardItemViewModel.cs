@@ -62,15 +62,43 @@ namespace IdCardPrintShop.ViewModels
 
         public void RefreshRectifiedPreview()
         {
+            // Fire-and-forget async: keeps UI responsive and prevents crash on batch import
+            _ = RefreshRectifiedPreviewAsync();
+        }
+
+        private async System.Threading.Tasks.Task RefreshRectifiedPreviewAsync()
+        {
             try
             {
-                if (string.IsNullOrEmpty(Region.SourceImagePath) || !System.IO.File.Exists(Region.SourceImagePath))
+                if (string.IsNullOrEmpty(Region.SourceImagePath) ||
+                    !System.IO.File.Exists(Region.SourceImagePath))
                 {
                     return;
                 }
 
-                using var mat = _imageService.WarpAndCorrectCard(Region.SourceImagePath, Region);
-                RectifiedImage = _imageService.MatToBitmapSource(mat);
+                // Run heavy OpenCV work on background thread
+                var regionSnapshot = Region;
+                var bitmapSource = await System.Threading.Tasks.Task.Run(() =>
+                {
+                    try
+                    {
+                        using var mat = _imageService.WarpAndCorrectCard(
+                            regionSnapshot.SourceImagePath, regionSnapshot);
+                        if (mat == null || mat.Empty()) return null;
+                        // MatToBitmapSource creates a frozen BitmapSource (cross-thread safe)
+                        return _imageService.MatToBitmapSource(mat);
+                    }
+                    catch
+                    {
+                        return null;
+                    }
+                });
+
+                // Update the observable property on the UI thread
+                if (bitmapSource != null)
+                {
+                    RectifiedImage = bitmapSource;
+                }
             }
             catch (Exception ex)
             {

@@ -791,13 +791,36 @@ namespace IdCardPrintShop.Services
         {
             if (mat == null || mat.Empty())
             {
-                throw new ArgumentNullException(nameof(mat));
+                return null!;
             }
 
-            // Use OpenCvSharp.WpfExtensions for fast, memory-safe conversion
-            var bmp = mat.ToBitmapSource();
-            bmp.Freeze();
-            return bmp;
+            try
+            {
+                // Encode to PNG bytes (thread-safe) then decode via BitmapImage
+                Cv2.ImEncode(".png", mat, out var buf);
+                using var ms = new System.IO.MemoryStream(buf);
+                var bmp = new System.Windows.Media.Imaging.BitmapImage();
+                bmp.BeginInit();
+                bmp.CacheOption = System.Windows.Media.Imaging.BitmapCacheOption.OnLoad;
+                bmp.StreamSource = ms;
+                bmp.EndInit();
+                bmp.Freeze(); // Must freeze to use cross-thread
+                return bmp;
+            }
+            catch
+            {
+                // Fallback: try WPF extension (requires UI thread but may work)
+                try
+                {
+                    var bmp = mat.ToBitmapSource();
+                    bmp.Freeze();
+                    return bmp;
+                }
+                catch
+                {
+                    return null!;
+                }
+            }
         }
 
         public byte[] MatToPngBytes(Mat mat)
