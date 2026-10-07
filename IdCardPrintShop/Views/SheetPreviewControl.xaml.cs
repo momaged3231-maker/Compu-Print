@@ -34,7 +34,37 @@ namespace IdCardPrintShop.Views
                 nameof(Cards),
                 typeof(IEnumerable<CardItemViewModel>),
                 typeof(SheetPreviewControl),
-                new PropertyMetadata(null, OnInputChanged));
+                new PropertyMetadata(null, OnCardsChanged));
+
+        private static void OnCardsChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is not SheetPreviewControl ctrl) return;
+
+            // Unsubscribe from old cards
+            if (e.OldValue is IEnumerable<CardItemViewModel> oldCards)
+            {
+                foreach (var card in oldCards)
+                    card.PropertyChanged -= ctrl.OnCardPropertyChanged;
+            }
+
+            // Subscribe to new cards — re-render when RectifiedImage loads async
+            if (e.NewValue is IEnumerable<CardItemViewModel> newCards)
+            {
+                foreach (var card in newCards)
+                    card.PropertyChanged += ctrl.OnCardPropertyChanged;
+            }
+
+            ctrl.RenderSheet();
+        }
+
+        private void OnCardPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(CardItemViewModel.RectifiedImage))
+            {
+                // Image loaded on background thread — re-render on UI thread
+                Dispatcher.InvokeAsync(RenderSheet);
+            }
+        }
 
         public static readonly DependencyProperty PersonalPhotosProperty =
             DependencyProperty.Register(
