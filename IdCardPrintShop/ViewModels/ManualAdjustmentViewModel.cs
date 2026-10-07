@@ -232,9 +232,9 @@ namespace IdCardPrintShop.ViewModels
         }
 
         /// <summary>
-        /// Automatically detects the card/document boundary and removes surrounding
-        /// background (hands, white borders, shadows). Uses a 3-pass OpenCV pipeline:
-        /// Adaptive thresh → Canny+dilate → Otsu, picks the best MinAreaRect.
+        /// Uses the full 6-pass detection pipeline to find card corners and remove
+        /// surrounding background (hands, whitespace, shadows).
+        /// Falls back to largest-contour MinAreaRect if no card is detected.
         /// </summary>
         [RelayCommand]
         public void AutoCropBackground()
@@ -243,6 +243,29 @@ namespace IdCardPrintShop.ViewModels
             {
                 StatusMessage = "جاري اكتشاف حدود البطاقة تلقائياً...";
 
+                // ── Step 1: Try the full 6-pass service pipeline first ──────────
+                var result = _imageService.DetectCards(_cardItemVm.Region.SourceImagePath);
+                if (result.DetectedCards.Count > 0)
+                {
+                    // Pick the highest-confidence card
+                    var best = result.DetectedCards
+                        .OrderByDescending(c => c.Confidence)
+                        .First();
+
+                    Corner0X = best.Corners[0].X;
+                    Corner0Y = best.Corners[0].Y;
+                    Corner1X = best.Corners[1].X;
+                    Corner1Y = best.Corners[1].Y;
+                    Corner2X = best.Corners[2].X;
+                    Corner2Y = best.Corners[2].Y;
+                    Corner3X = best.Corners[3].X;
+                    Corner3Y = best.Corners[3].Y;
+                    UpdateLivePreview();
+                    StatusMessage = $"✅ تم قص الخلفية — {result.Message}";
+                    return;
+                }
+
+                // ── Step 2: Fallback — largest non-background contour ───────────
                 using var src = _imageService.LoadMat(_cardItemVm.Region.SourceImagePath);
                 if (src == null || src.Empty())
                 {
@@ -250,39 +273,30 @@ namespace IdCardPrintShop.ViewModels
                     return;
                 }
 
-                int origW = src.Width;
-                int origH = src.Height;
-                double totalArea = origW * origH;
+                int origW = src.Width, origH = src.Height;
+                double totalArea = origW * (double)origH;
+                double scale = Math.Min(1.0, 1400.0 / Math.Max(origW, origH));
 
-                // Work on a downscaled copy for speed
-                double scale = Math.Min(1.0, 1200.0 / Math.Max(origW, origH));
                 using var small = new Mat();
                 Cv2.Resize(src, small, new Size((int)(origW * scale), (int)(origH * scale)));
-
                 using var gray = new Mat();
                 Cv2.CvtColor(small, gray, ColorConversionCodes.BGR2GRAY);
-
                 using var blurred = new Mat();
-                Cv2.GaussianBlur(gray, blurred, new Size(5, 5), 0);
+                Cv2.GaussianBlur(gray, blurred, new Size(7, 7), 1.5);
 
-                var bestQuad = TryFindCardRect(blurred, scale, origW, origH, totalArea);
-
-                if (bestQuad != null)
+                var quad = TryFindCardRect(blurred, scale, origW, origH, totalArea);
+                if (quad != null)
                 {
-                    Corner0X = bestQuad[0].X;
-                    Corner0Y = bestQuad[0].Y;
-                    Corner1X = bestQuad[1].X;
-                    Corner1Y = bestQuad[1].Y;
-                    Corner2X = bestQuad[2].X;
-                    Corner2Y = bestQuad[2].Y;
-                    Corner3X = bestQuad[3].X;
-                    Corner3Y = bestQuad[3].Y;
+                    Corner0X = quad[0].X;  Corner0Y = quad[0].Y;
+                    Corner1X = quad[1].X;  Corner1Y = quad[1].Y;
+                    Corner2X = quad[2].X;  Corner2Y = quad[2].Y;
+                    Corner3X = quad[3].X;  Corner3Y = quad[3].Y;
                     UpdateLivePreview();
-                    StatusMessage = "✅ تم قص الخلفية تلقائياً — إذا لم يكن دقيقاً اضبط يدوياً.";
+                    StatusMessage = "✅ تم قص الخلفية (نتيجة احتياطية) — إذا لم يكن دقيقاً اضبط يدوياً.";
                 }
                 else
                 {
-                    StatusMessage = "⚠️ لم يتم العثور على حدود واضحة — جرب التعديل اليدوي.";
+                    StatusMessage = "⚠️ لم يتم العثور على حدود واضحة — جرب التعديل اليدوي أو زر إعادة الاكتشاف.";
                 }
             }
             catch (Exception ex)
